@@ -8,7 +8,6 @@ Updates the HyperFlash repository:
 5. Commits the changes to git.
 """
 import json
-import shutil
 import stat
 import subprocess
 from pathlib import Path
@@ -81,12 +80,11 @@ PORTABLE_HOOKS = {
         ]
     }
 }
-
 (SRC_DIR / "hooks.json").write_text(json.dumps(PORTABLE_HOOKS, indent=2) + "\n", encoding="utf-8")
 print("[UPDATE] src/hooks.json converted to portable template.")
 
 # 3. Update install.sh to interpolate {{CONFIG_DIR}}
-INSTALL_SH = r"""#!/usr/bin/env bash
+INSTALL_SH = """#!/usr/bin/env bash
 set -e
 
 DEST="$HOME/.gemini/config"
@@ -115,25 +113,25 @@ echo "Type '@hyperflash' in the Antigravity IDE chat or run 'agy --agent hyperfl
 (REPO_ROOT / "install.sh").chmod((REPO_ROOT / "install.sh").stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 # 4. Update install.ps1 for Windows
-INSTALL_PS1 = r"""$DEST = Join-Path $HOME ".gemini\config"
+INSTALL_PS1 = """$DEST = Join-Path $HOME ".gemini\\config"
 $PSScriptRoot = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
 
 Write-Host "=== Installing HyperFlash to $DEST ===" -ForegroundColor Cyan
-New-Item -ItemType Directory -Force -Path "$DEST\agents", "$DEST\skills\hyperflash\references", "$DEST\skills\hyperflash\scripts", "$DEST\rules", "$DEST\scripts" | Out-Null
+New-Item -ItemType Directory -Force -Path "$DEST\\agents", "$DEST\\skills\\hyperflash\\references", "$DEST\\skills\\hyperflash\\scripts", "$DEST\\rules", "$DEST\\scripts" | Out-Null
 
-Copy-Item "$PSScriptRoot\src\AGENTS.md" "$DEST\AGENTS.md" -Force
-Copy-Item "$PSScriptRoot\src\rules\hyperflash-protocol.md" "$DEST\rules\" -Force
-Copy-Item "$PSScriptRoot\src\agents\*.md" "$DEST\agents\" -Force
-Copy-Item "$PSScriptRoot\src\skills\hyperflash\SKILL.md" "$DEST\skills\hyperflash\" -Force
-Copy-Item "$PSScriptRoot\src\skills\hyperflash\references\*" "$DEST\skills\hyperflash\references\" -Force
-Copy-Item "$PSScriptRoot\src\skills\hyperflash\scripts\*.py" "$DEST\skills\hyperflash\scripts\" -Force
-Copy-Item "$PSScriptRoot\src\scripts\*.py" "$DEST\scripts\" -Force
+Copy-Item "$PSScriptRoot\\src\\AGENTS.md" "$DEST\\AGENTS.md" -Force
+Copy-Item "$PSScriptRoot\\src\\rules\\hyperflash-protocol.md" "$DEST\\rules\\" -Force
+Copy-Item "$PSScriptRoot\\src\\agents\\*.md" "$DEST\\agents\\" -Force
+Copy-Item "$PSScriptRoot\\src\\skills\\hyperflash\\SKILL.md" "$DEST\\skills\\hyperflash\\" -Force
+Copy-Item "$PSScriptRoot\\src\\skills\\hyperflash\\references\\*" "$DEST\\skills\\hyperflash\\references\\" -Force
+Copy-Item "$PSScriptRoot\\src\\skills\\hyperflash\\scripts\\*.py" "$DEST\\skills\\hyperflash\\scripts\\" -Force
+Copy-Item "$PSScriptRoot\\src\\scripts\\*.py" "$DEST\\scripts\\" -Force
 
 # Interpolate {{CONFIG_DIR}} for hooks.json
-$HooksTemplate = Get-Content "$PSScriptRoot\src\hooks.json" -Raw
-$NormalizedDest = $DEST -replace '\\', '/'
-$HooksFinal = $HooksTemplate -replace '\{\{CONFIG_DIR\}\}', $NormalizedDest
-Set-Content "$DEST\hooks.json" $HooksFinal -Force
+$HooksTemplate = Get-Content "$PSScriptRoot\\src\\hooks.json" -Raw
+$NormalizedDest = $DEST -replace '\\\\', '/'
+$HooksFinal = $HooksTemplate -replace '{{CONFIG_DIR}}', $NormalizedDest
+Set-Content "$DEST\\hooks.json" $HooksFinal -Force
 
 Write-Host "[OK] HyperFlash successfully installed!" -ForegroundColor Green
 Write-Host "Type '@hyperflash' in the Antigravity IDE chat or run 'agy --agent hyperflash' in your terminal."
@@ -304,27 +302,7 @@ MIT © [Virat Ghatge](https://github.com/Virat-Ghatge)
 (REPO_ROOT / "README.md").write_text(README_CONTENT.strip() + "\n", encoding="utf-8")
 print("[UPDATE] README.md completely rewritten with informative badges, architecture, and activation guide.")
 
-# Sync to ~/hyperflash if it exists
-HOME_REPO = Path.home() / "hyperflash"
-if HOME_REPO.exists() and HOME_REPO.resolve() != REPO_ROOT.resolve():
-    print(f"[SYNC] Synchronizing updates to {HOME_REPO}")
-    if (HOME_REPO / "scaffold_hyperflash_repo.py").exists():
-        (HOME_REPO / "scaffold_hyperflash_repo.py").unlink()
-    shutil.copy2(REPO_ROOT / "README.md", HOME_REPO / "README.md")
-    shutil.copy2(REPO_ROOT / "install.sh", HOME_REPO / "install.sh")
-    shutil.copy2(REPO_ROOT / "install.ps1", HOME_REPO / "install.ps1")
-    shutil.copy2(SRC_DIR / "hooks.json", HOME_REPO / "src" / "hooks.json")
-    try:
-        subprocess.run(["git", "-C", str(HOME_REPO), "add", "."], check=True)
-        subprocess.run(
-            ["git", "-C", str(HOME_REPO), "commit", "-m", "docs: revamp README and make lifecycle hooks portable"],
-            check=True
-        )
-        print("[SYNC] Committed updates in ~/hyperflash.")
-    except Exception as exc:
-        print(f"Notice syncing ~/hyperflash git: {exc}")
-
-# 6. Git commit in current repo
+# 6. Git commit
 try:
     subprocess.run(["git", "add", "."], check=True)
     subprocess.run(["git", "commit", "-m", "docs: revamp README and make lifecycle hooks portable"], check=True)

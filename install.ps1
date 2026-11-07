@@ -15,7 +15,7 @@ Copy-Item "$PSScriptRoot\src\scripts\*.py" "$DEST\scripts\" -Force
 # Interpolate {{CONFIG_DIR}} for hooks.json
 $HooksTemplate = Get-Content "$PSScriptRoot\src\hooks.json" -Raw
 $NormalizedDest = $DEST -replace '\\', '/'
-$HooksFinal = $HooksTemplate -replace '\{\{CONFIG_DIR\}\}', $NormalizedDest
+$HooksFinal = $HooksTemplate -replace '{{CONFIG_DIR}}', $NormalizedDest
 Set-Content "$DEST\hooks.json" $HooksFinal -Force
 
 Write-Host "[OK] HyperFlash successfully installed!" -ForegroundColor Green
