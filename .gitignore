@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.agents/state/
+.venv/
+env/
+dist/
+build/

@@ -1,0 +1,30 @@
+{
+  "SessionStart": [
+    {
+      "matcher": ".*",
+      "command": "python3 \"C:/Users/virat ghatge/.gemini/config/scripts/build_symbol_graph.py\"",
+      "description": "Indexes workspace AST symbols into .agents/state/symbol_graph.json"
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "view_file|read_file|replace_file_content|multi_replace_file_content|write_to_file",
+      "command": "python3 \"C:/Users/virat ghatge/.gemini/config/scripts/enforce_hyperflash_pre_hook.py\"",
+      "description": "Enforces HyperFlash Invariants 1 (Ground First), 2 (Scope), 4 (No Exact Retry), and 7 (No Code Truncation)"
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "replace_file_content|multi_replace_file_content|write_to_file|run_command",
+      "command": "python3 \"C:/Users/virat ghatge/.gemini/config/scripts/mark_mutation_post_hook.py\"",
+      "description": "Updates mutation timestamps in contract.json and logs failed tool hashes for Invariant 4"
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": ".*",
+      "command": "python3 \"C:/Users/virat ghatge/.gemini/config/scripts/enforce_completion_stop_hook.py\"",
+      "description": "Enforces Invariant 3: Blocks completion if files were mutated without a subsequent VERDICT: PASS"
+    }
+  ]
+}
