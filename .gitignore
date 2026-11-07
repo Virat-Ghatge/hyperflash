@@ -8,3 +8,5 @@ __pycache__/
 env/
 dist/
 build/
+update_hyperflash_repo.py
+patch_hyperflash_repo.py

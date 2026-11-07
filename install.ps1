@@ -12,11 +12,24 @@ Copy-Item "$PSScriptRoot\src\skills\hyperflash\references\*" "$DEST\skills\hyper
 Copy-Item "$PSScriptRoot\src\skills\hyperflash\scripts\*.py" "$DEST\skills\hyperflash\scripts\" -Force
 Copy-Item "$PSScriptRoot\src\scripts\*.py" "$DEST\scripts\" -Force
 
-# Interpolate {{CONFIG_DIR}} for hooks.json
-$HooksTemplate = Get-Content "$PSScriptRoot\src\hooks.json" -Raw
+# Non-destructive hook merge
 $NormalizedDest = $DEST -replace '\\', '/'
-$HooksFinal = $HooksTemplate -replace '{{CONFIG_DIR}}', $NormalizedDest
-Set-Content "$DEST\hooks.json" $HooksFinal -Force
+$TemplateRaw = (Get-Content "$PSScriptRoot\src\hooks.json" -Raw) -replace '{{CONFIG_DIR}}', $NormalizedDest
+$NewHooks = $TemplateRaw | ConvertFrom-Json
+
+$DestHooksPath = Join-Path $DEST "hooks.json"
+$ExistingHooks = @{}
+if (Test-Path $DestHooksPath) {
+    try {
+        $ExistingHooks = (Get-Content $DestHooksPath -Raw | ConvertFrom-Json)
+    } catch {}
+}
+
+foreach ($prop in $NewHooks.PSObject.Properties) {
+    $ExistingHooks | Add-Member -MemberType NoteProperty -Name $prop.Name -Value $prop.Value -Force
+}
+
+$ExistingHooks | ConvertTo-Json -Depth 10 | Set-Content $DestHooksPath -Force
 
 Write-Host "[OK] HyperFlash successfully installed!" -ForegroundColor Green
-Write-Host "Type '@hyperflash' in the Antigravity IDE chat or run 'agy --agent hyperflash' in your terminal."
+Write-Host "Type '@hyperflash' in the Antigravity Desktop IDE chat or run 'agy --agent hyperflash' in your terminal."
