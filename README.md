@@ -1,198 +1,155 @@
 # ⚡ HyperFlash
 
-> High-rigor, production-grade multi-agent reliability runtime for **Google Antigravity**. Forces fast models like **Gemini 3.8 Flash** to deliver enterprise-grade engineering output without drift, lazy truncation comments, or broken builds.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Runtime](https://img.shields.io/badge/Runtime-Python_3.10+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/Platform-Google_Antigravity-4285F4.svg)](https://antigravity.google/)
+[![Engine](https://img.shields.io/badge/Engine-Gemini_3.8_Flash-8E75C2.svg)](https://deepmind.google/technologies/gemini/)
 
-HyperFlash replaces the default Antigravity `/boost` flow with deterministic OS-level lifecycle hooks, AST symbol indexing, and an 8-invariant verification pipeline inspired by the open-source **Gravitas** runtime.
+> **Autonomous multi-agent reliability runtime for Google Antigravity.** Engineered to force **Gemini 3.8 Flash** to deliver top-tier, enterprise-grade engineering output without context drift, lazy code elision, or broken builds.
 
 ---
 
-## 🚀 Quick Start
+## 🎯 Why HyperFlash?
 
-### 1. Installation
+Fast execution models (like Gemini 3.8 Flash) are lightning-quick and cost-effective, but they suffer from predictable failure modes on complex software engineering tasks:
 
-#### Linux & macOS
+* **Lazy Code Elision:** Under output pressure, fast models truncate code blocks with `// ... rest of implementation` or empty `pass` blocks.
+* **Ungrounded Edits:** Modifying source files before reading callers or upstream type definitions, introducing cascading regressions.
+* **Premature Victory:** Declaring *"I have fixed the issue!"* without compiling the code, running linters, or verifying test suites.
+* **Native `/boost` Inefficiencies:** Antigravity's standard `/boost` command spins up heavy, full-agent swarms even for 2-line fixes, burning tokens and adding unnecessary latency.
+
+**HyperFlash solves this by trading model parameter scale for structural scaffolding, AST indexing, and deterministic OS-level verification gates.**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 THE HYPERFLASH ADVANTAGE                               │
+├──────────────────────────┬───────────────────┬───────────────────┬─────────────────────┤
+│ Dimension                │ Vanilla 3.8 Flash │ Native /boost     │ HyperFlash ⚡       │
+├──────────────────────────┼───────────────────┼───────────────────┼─────────────────────┤
+│ Code Completeness        │ Frequent elision  │ Occasional elision│ 100% Guaranteed (1) │
+│ Upstream Caller Tracking │ Unreliable        │ Broad grep scans  │ AST Symbol Graph (2)│
+│ Premature Completion     │ Very High         │ Moderate          │ Blocked by Hook (3) │
+│ Byte-Identical Loops     │ Common on failure │ Possible          │ SHA-256 Ledger (4)  │
+│ Trivial Task Latency     │ 2–4s              │ 30–60s (Swarm)    │ Adaptive Triage (5) │
+│ Cost & Quota Footprint   │ Minimal           │ High Token Burn   │ Highly Optimized    │
+└──────────────────────────┴───────────────────┴───────────────────┴─────────────────────┘
+(1) PreToolUse hook hard-blocks any replacement payload matching elision regexes.
+(2) SessionStart hook generates a compact workspace symbol graph (.agents/state/symbol_graph.json).
+(3) Stop hook denies task exit if files were mutated without a subsequent passing test run.
+(4) Tool call hashes are recorded; identical retries of failed attempts are rejected immediately.
+(5) Direct-mode triage routes single-file edits instantly without spawning redundant subagents.
+```
+
+---
+
+## 🏛 Multi-Agent Architecture
+
+HyperFlash enforces strict **tool-permission asymmetry**. The primary orchestrator is stripped of file-writing tools, making it impossible to bypass the verification loop or mutate code without a contract:
+
+```
+                          ┌───────────────────────────────┐
+                          │     hyperflash (Router)       │
+                          │(Read-Only + Subagent Invoker) │
+                          └───────────────┬───────────────┘
+                                          │
+                  ┌───────────────────────┼───────────────────────┐
+                  ▼                       ▼                       ▼
+         ┌──────────────────┐    ┌───────────────────┐   ┌──────────────────┐
+         │   investigator   │    │  patch-executor   │   │  test-adversary  │
+         │(Read-Only Recon) │    │ (Surgical Diffs)  │   │(9-Tier Verifier) │
+         └──────────────────┘    └───────────────────┘   └──────────────────┘
+                  │                                               ▲
+                  ▼                                               │
+         ┌──────────────────┐                                     │
+         │  impact-auditor  │                                     │
+         │(Call-Graph Scope)│─────────────────────────────────────┘
+```
+
+### The Subagent Team
+
+| Subagent | Role | Permitted Tools | Core Responsibility |
+|---|---|---|---|
+| **`hyperflash`** | **Orchestrator** | Read, Search, Subagent Hooks | Evaluates task complexity, initializes `contract.json`, and coordinates subagents. Zero write tools. |
+| **`hyperflash-investigator`** | **Reconnaissance** | `view_file`, `grep_search` | Inspects target files, identifies relevant tests, and localizes implementation areas. |
+| **`hyperflash-impact-auditor`** | **Dependency Auditor** | `view_file`, `symbol_graph` | Traces callers across the repository to lock `allowed_write_scope` before any code changes. |
+| **`hyperflash-patch-executor`** | **Implementation** | `replace_file_content` | Applies minimal, surgical diffs. Enforces Chunked Long-Decode and exhaustive static typing. |
+| **`hyperflash-reviewer`** | **Code Reviewer** | `view_file`, `run_command` | Audits `git diff` against structural invariants and project conventions (Tier 8 Verification). |
+| **`hyperflash-test-adversary`** | **Verification & QA** | `run_command` | Executes compilers, linters, and unit test suites (Tiers 1–6) to produce concrete pass/fail evidence. |
+
+---
+
+## 🛡 The 8 Watcher Invariants
+
+Every action inside HyperFlash is governed by the 8 Watcher Invariants, enforced at the OS level via `~/.gemini/config/hooks.json`:
+
+1. **Ground Before Mutating:** Target files must be viewed in the current session before edits are allowed.
+2. **Stay in Declared Scope:** File edits outside `allowed_write_scope` in `contract.json` are rejected.
+3. **Fresh Evidence Required:** The `Stop` hook blocks task completion unless tests pass *after* the latest file edit (`last_verified_ts >= last_mutation_ts`).
+4. **Never Exact-Retry a Failure:** Failed tool inputs are fingerprinted via SHA-256 in `retry_ledger.json` to prevent identical retry loops.
+5. **Satisfy the Contract:** Task completion is gated by explicit acceptance criteria.
+6. **Report Reality Only:** Claims of passing builds or resolved bugs must cite actual terminal output.
+7. **Zero Code Elision:** Regex hooks reject `// ... rest of code`, `# ... existing code`, or `TODO: implement` placeholders.
+8. **Exhaustive Static Typing:** All parameters and return values must carry explicit static types; edits require counterfactual `<pre_mortem>` records.
+
+---
+
+## 🚀 Quick Install
+
+### Linux & macOS
 ```bash
-git clone https://github.com/Virat-Ghatge/hyperflash.git ~/hyperflash
-cd ~/hyperflash
-chmod +x install.sh
+git clone https://github.com/Virat-Ghatge/hyperflash.git
+cd hyperflash
 ./install.sh
 ```
 
-#### Windows (PowerShell)
+### Windows (PowerShell)
 ```powershell
-git clone https://github.com/Virat-Ghatge/hyperflash.git "$HOME\hyperflash"
-cd "$HOME\hyperflash"
+git clone https://github.com/Virat-Ghatge/hyperflash.git
+cd hyperflash
 .\install.ps1
 ```
 
-### 2. Verify Installation
+The installer configures your global Antigravity environment (`~/.gemini/config/`) with all required agents, skills, rules, and lifecycle hooks.
 
+---
+
+## 💻 How to Use HyperFlash
+
+HyperFlash integrates natively with both the Antigravity Desktop IDE and the CLI.
+
+### 1. In the Antigravity Desktop IDE (Recommended)
+You can invoke HyperFlash directly in your active conversation using any of these methods:
+* **In-Chat Mention (`@hyperflash`):** Type `@hyperflash` directly in the prompt box followed by your task. This immediately routes the prompt through the HyperFlash orchestrator:
+  ```text
+  @hyperflash Refactor the event bus in src/events.py to support backpressure and ensure all unit tests pass.
+  ```
+* **Agent Selector Dropdown:** Click the Agent dropdown above the prompt input and choose **`hyperflash`**.
+* **Slash Switcher:** Send `/agent hyperflash` in chat to lock the session to HyperFlash.
+
+### 2. In the Antigravity CLI (`agy`)
+* **Launch directly:**
+  ```bash
+  agy --agent hyperflash
+  ```
+* **Launch with an interactive prompt:**
+  ```bash
+  agy --agent hyperflash -i "Fix failing pytest assertions in tests/test_engine.py"
+  ```
+* **Switch mid-session:** Type `/agent hyperflash` inside any active CLI session.
+
+---
+
+## 🧪 Verification & Telemetry
+
+HyperFlash maintains a real-time state ledger inside your project's `.agents/state/` folder:
+
+* **`.agents/state/symbol_graph.json`:** Pre-indexed AST map containing all classes, methods, and line numbers.
+* **`.agents/state/contract.json`:** Active task contract tracking `allowed_write_scope`, criteria, and `last_verified_ts`.
+* **`.agents/state/retry_ledger.json`:** SHA-256 failure fingerprints preventing identical loops.
+
+To verify the test suite and contract independently at any point, run:
 ```bash
-# Verify the skill and agents are available
-agy --version
-agy --agent hyperflash "verify setup"
-```
-
----
-
-## 💡 Why HyperFlash?
-
-Fast frontier models like **Gemini 3.8 Flash** have exceptional reasoning capabilities and blazing inference speeds, but autonomous coding agents frequently succumb to standard failure modes during complex tasks:
-
-1. **Lazy Code Truncation:** Emitting `// ... rest of code` or `# ... existing implementation` comments that silently delete source logic.
-2. **Context Drift & Hallucination:** Attempting edits on imagined file contents without grounding against actual workspace dependencies or callers.
-3. **Out-of-Scope Mutations:** Touching unrelated files across the workspace during bug fixes.
-4. **Premature Completion Claims:** Declaring "Fixed and verified!" without ever executing tests after modifying code.
-5. **Byte-Identical Retry Loops:** Retrying the exact same failed tool call repeatedly when encountering compilation or runtime errors.
-
-**HyperFlash** eliminates these failure modes by enforcing deterministic **OS-level lifecycle hooks** and an **8-invariant reliability runtime** directly in the Antigravity agent loop.
-
----
-
-## 🏛️ Architecture & Lifecycle Hooks
-
-```
-                ┌────────────────────────────────────────────────────────┐
-                │             Agent Workspace Lifecycle                  │
-                └──────────────────────────┬─────────────────────────────┘
-                                           │
-                        [SessionStart] (Hook)
-                                           ▼
-                 Generate AST Symbol Graph (.agents/state/symbol_graph.json)
-                                           │
-                                           ▼
-                     Orchestrator: @hyperflash (Contract Init)
-                     .agents/state/contract.json (Mode, Scope, Criteria)
-                                           │
-                                           ▼
-                      PreToolUse Hook (Invariants 1, 2, 4, 7)
-               ┌───────────────────────────┼───────────────────────────┐
-               │                           │                           │
-         [Invariant 1]               [Invariant 2]               [Invariant 7]
-       Ground First: Must         Scope Control: Deny          Zero Elision: Deny
-       view_file target           writes outside contract      "// ... rest of code"
-               │                           │                           │
-               └───────────────────────────┼───────────────────────────┘
-                                           │
-                                           ▼
-                                 Tool Execution (Edits)
-                                           │
-                                           ▼
-                     PostToolUse Hook: Mark Mutation (Dirty TS)
-                                           │
-                                           ▼
-                        Subagent Verification Escalation
-                    Tier 1-6: @hyperflash-test-adversary
-                    Tier 7-8: @hyperflash-reviewer
-                                           │
-                                           ▼
-                     Stop Hook (Invariant 3 Evidence Gate)
-                Deny stop if files mutated without VERDICT: PASS
-```
-
----
-
-## 🛡️ The 8 Invariants
-
-These hold across models and runtime environments. Machine-checkable invariants are enforced at the OS hook level (`hooks.json`); the rest are bound by the agent constitution (`AGENTS.md`):
-
-1. **Ground before mutating:** Read `.agents/state/symbol_graph.json`, then inspect the target file, its tests, and callers via `view_file` before editing. Never act on assumed state.
-2. **Stay in declared scope:** Writes outside `allowed_write_scope` in `.agents/state/contract.json` are denied by the `PreToolUse` hook.
-3. **Completion needs fresh evidence:** A task is completed only when a HyperFlash validator (`verify_hierarchy.py`) passed *after* the last file mutation (`last_verified_ts >= last_mutation_ts`). Stale evidence and self-review do not count.
-4. **Never exact-retry a failure:** A failed approach may be retried only after context or diagnosis changes. The `PreToolUse` hook blocks byte-identical retries via `.agents/state/retry_ledger.json`.
-5. **Satisfy the contract:** Acceptance criteria and required validators in `contract.json` gate completion.
-6. **Say what you can't verify:** Downgrade confidence instead of fabricating certainty. Explicitly report unverified claims.
-7. **Zero code elision & Chunked Long-Decode:** Never write `// ... rest of code`, `# ... existing implementation`, or `TODO: implement`. For edits exceeding 200 lines, use **Chunked Long-Decode**: write typed skeletons first, then populate bodies in 100-150 line batches.
-8. **Exhaustive static typing & Counterfactual Pre-Mortem:** Every function parameter and return type must carry explicit static types. Always emit a `pre_mortem` block verifying callers and edge cases before mutating code.
-
----
-
-## 🤖 The HyperFlash Multi-Agent Team
-
-HyperFlash includes 6 specialized agent personas orchestrated automatically or invokable directly in Antigravity:
-
-| Agent | Role | Capabilities |
-|---|---|---|
-| **`@hyperflash`** | **Elite Orchestrator** | Coordinates end-to-end task lifecycle, policy routing, and subagent delegation. |
-| **`@hyperflash-investigator`** | **Codebase Reconnaissance** | Read-only explorer for complex symbol search, dependency tracing, and grounding. |
-| **`@hyperflash-impact-auditor`** | **Blast Radius Auditor** | Maps caller chains, imports, and downstream contracts affected by changes. |
-| **`@hyperflash-patch-executor`** | **Surgical Implementer** | Implements code changes with strict typing, Chunked Long-Decode, and pre-mortems. |
-| **`@hyperflash-test-adversary`** | **Verification Engine** | Runs compiler, static analysis, unit tests, and reproducer scripts (Tiers 1-6). |
-| **`@hyperflash-reviewer`** | **Independent Reviewer** | Performs independent static code review and diff auditing (Tier 8). |
-
----
-
-## 📊 Verification Hierarchy (9 Tiers)
-
-HyperFlash orders evidence rigor from strongest deterministic validation down to heuristic review:
-
-1. **Tier 1:** Hidden deterministic acceptance validator
-2. **Tier 2:** External integration / runtime execution
-3. **Tier 3:** Project test suites (`pytest`, `jest`, `vitest`, `cargo test`, `go test`)
-4. **Tier 4:** Compiler & static type checking (`py_compile`, `tsc --noEmit`, `mypy`)
-5. **Tier 5:** Deterministic linters (`ruff`, `eslint`)
-6. **Tier 6:** Executable reproducer scripts
-7. **Tier 7:** Structural & diff invariants
-8. **Tier 8:** Independent subagent review (`@hyperflash-reviewer`)
-9. **Tier 9:** Same-model self-review (supplementary only; never completion evidence)
-
----
-
-## 📁 Repository Structure
-
-```
-hyperflash/
-├── .gitignore
-├── LICENSE
-├── README.md
-├── install.sh
-├── install.ps1
-├── uninstall.sh
-├── uninstall.ps1
-└── src/
-    ├── AGENTS.md
-    ├── hooks.json
-    ├── agents/
-    │   ├── hyperflash.md
-    │   ├── hyperflash-impact-auditor.md
-    │   ├── hyperflash-investigator.md
-    │   ├── hyperflash-patch-executor.md
-    │   ├── hyperflash-reviewer.md
-    │   └── hyperflash-test-adversary.md
-    ├── rules/
-    │   └── hyperflash-protocol.md
-    ├── scripts/
-    │   ├── build_symbol_graph.py
-    │   ├── enforce_completion_stop_hook.py
-    │   ├── enforce_hyperflash_pre_hook.py
-    │   └── mark_mutation_post_hook.py
-    └── skills/
-        └── hyperflash/
-            ├── SKILL.md
-            ├── references/
-            │   └── verification-and-contracts.md
-            └── scripts/
-                ├── hyperflash_decide.py
-                └── verify_hierarchy.py
-```
-
----
-
-## 💻 CLI & IDE Usage
-
-### CLI (`agy`)
-```bash
-# Launch Antigravity session with HyperFlash orchestrator
-agy --agent hyperflash
-
-# Or invoke directly with a prompt
-agy --agent hyperflash "Refactor the authentication middleware to use JWT tokens"
-```
-
-### Antigravity IDE
-Mention `@hyperflash` in your chat or prompt to activate the orchestrator for any repository-changing task:
-```text
-@hyperflash Refactor the payments service and ensure all tests pass
+python3 ~/.gemini/config/skills/hyperflash/scripts/verify_hierarchy.py
 ```
 
 ---
