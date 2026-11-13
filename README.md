@@ -49,6 +49,10 @@ HyperFlash is a **model-agnostic, harness-agnostic engineering reliability runti
 
 Whether you are using fast economy engines (**Gemini 3.8 Flash**, **Claude 3.5 Haiku**, **GPT-4o-mini**) or frontier reasoning models (**Claude 3.7 Sonnet**, **OpenAI o1/o3**, **Gemini 3 Pro / Hydrogen**, **DeepSeek-R1**), HyperFlash guarantees that code modifications are surgical, complete, type-safe, and empirically verified before completion is ever granted.
 
+> [!NOTE]
+> **Origins & Multi-Platform Evolution:**
+> HyperFlash was originally conceived and engineered specifically with **Google Antigravity** in mind to solve the notorious `/boost` token burn, lazy code truncation (`// ... rest of code`), and premature victory hallucinations. Having achieved rock-solid reliability in Antigravity through native lifecycle hooks and permission asymmetry, we are now actively expanding HyperFlash to bring that same disciplined engineering rigor to **all major platforms**—including **OpenCode**, **Claude Code**, **Cursor**, **Windsurf**, and standalone CLI workflows.
+
 ---
 
 ## 🌐 Universal Model & Harness Compatibility
@@ -625,6 +629,14 @@ hyperflash/
 <summary><b>Does HyperFlash work outside of Google Antigravity?</b></summary>
 <br/>
 <b>Yes.</b> HyperFlash is completely harness-agnostic. The repository includes configurations, constitutions, and CLI scripts for <b>Claude Code</b>, <b>OpenCode / OpenHands</b>, <b>Cursor</b>, <b>Windsurf</b>, standalone terminal workflows, and Git pre-commit hooks.
+</details>
+
+<details>
+<summary><b>Wasn't HyperFlash originally built for Google Antigravity?</b></summary>
+<br/>
+<b>Yes!</b> HyperFlash was originally created specifically for Google Antigravity to solve real-world autonomous coding frustrations: ungrounded mutations, code truncation, and the heavy token burn of Antigravity's default <code>/boost</code> swarm. 
+<br/><br/>
+However, software engineering reliability is a universal challenge across all AI developer tools. We are actively bringing HyperFlash to the entire ecosystem—supporting <b>OpenCode</b>, <b>Claude Code</b>, <b>Cursor</b>, <b>Windsurf</b>, and custom agent runtimes through our universal <code>hyperflash init</code> CLI and local MCP server.
 </details>
 
 <details>
