@@ -167,16 +167,21 @@ def test_run_verification_on_clean_workspace(tmp_path: Path) -> None:
 
 
 def test_setup_opencode(tmp_path: Path) -> None:
-    """Verifies that setup_opencode creates OPENCODE.md and opencode.json directly."""
+    """Verifies that setup_opencode creates OPENCODE.md, agent persona, and opencode.json."""
     created = setup_opencode(tmp_path)
-    assert len(created) == 2
+    assert len(created) == 3
 
     opencode_md = tmp_path / "OPENCODE.md"
     assert opencode_md.exists()
     assert "HyperFlash Reliability Constitution for OpenCode" in opencode_md.read_text(encoding="utf-8")
+
+    agent_json = tmp_path / ".opencode" / "agents" / "hyperflash.json"
+    assert agent_json.exists()
+    assert "HyperFlash" in agent_json.read_text(encoding="utf-8")
 
     opencode_json = tmp_path / "opencode.json"
     assert opencode_json.exists()
     content = opencode_json.read_text(encoding="utf-8")
     assert "mcpServers" in content
     assert "hyperflash" in content
+    assert '"agent": "hyperflash"' in content

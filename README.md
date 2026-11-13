@@ -164,6 +164,24 @@ hyperflash init --target antigravity
 hyperflash init --target opencode
 ```
 
+### 🚀 Universal Agent Launcher
+Launch your preferred coding environment with the native HyperFlash agent persona pre-activated:
+
+```bash
+# Launch OpenCode with native HyperFlash agent
+hyperflash launch opencode
+
+# Launch Antigravity terminal session with HyperFlash agent
+hyperflash launch antigravity   # or: hyperflash launch agy
+
+# Launch Claude Code with HyperFlash rules and /hyperflash command
+hyperflash launch claude
+
+# Launch Cursor or Windsurf with HyperFlash agent rules
+hyperflash launch cursor
+hyperflash launch windsurf
+```
+
 ### 🔌 Universal MCP Server Integration
 HyperFlash features a built-in Model Context Protocol (MCP) server running over stdio with **zero external dependencies**. Adding it gives your agent surgical safe patching (`hyperflash_safe_patch`), workspace AST symbol inspection (`hyperflash_get_symbol_graph`), and deterministic multi-tier verification (`hyperflash_verify`):
 
@@ -270,37 +288,59 @@ HyperFlash integrates directly into the Antigravity Desktop IDE and the terminal
 
 ### 2. Claude Code (Anthropic CLI)
 
-You can bring HyperFlash's invariants into Claude Code using project memory and pre/post tool hooks.
+You can bring HyperFlash's invariants into Claude Code using project memory, pre/post tool hooks, and native slash commands.
 
-#### Step 1: Add HyperFlash Constitution to `CLAUDE.md`
-Add the following to your project's `CLAUDE.md` or `~/.claude/CLAUDE.md`:
+#### Step 1: Automatic Setup via CLI
+```bash
+hyperflash init --target claude
+```
+This automatically configures:
+- `CLAUDE.md`: System reliability constitution.
+- `.claude.json`: Local stdio MCP server for safe patching and AST symbol graphs.
+- `.claude/commands/hyperflash.md`: Dedicated agent slash command.
 
-```markdown
-# HyperFlash Reliability Constitution for Claude Code
-
-1. GROUND FIRST: Never call file editing tools on an existing file without calling `View` or `Cat` first in this session.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Every edit must be 100% complete.
-3. CONTRACT BOUNDARY: Only mutate files explicitly discussed and approved for the current task. Do not touch external modules.
-4. EVIDENCE OVER CLAIMS: Never declare a task complete or a bug fixed unless you have executed the project test command (`pytest`, `npm test`, `cargo test`) in this session and observed exit code 0.
-5. CHUNKED DECODE: For files exceeding 200 lines, emit class/function skeletons first, then populate method bodies in surgical 100-150 line diffs.
+#### Step 2: Activate HyperFlash in Claude Code
+Inside any Claude Code terminal session, simply run:
+```text
+/hyperflash
+```
+Or launch Claude Code directly with HyperFlash active:
+```bash
+hyperflash launch claude
 ```
 
-#### Step 2: Wire Pre-Commit Verification
-Run HyperFlash's standalone verification script inside Claude Code:
+#### Step 3: Run Deterministic Verification
+Execute HyperFlash's verification hierarchy directly from Claude Code:
 ```bash
-python -m src.skills.hyperflash.scripts.verify_hierarchy --tier 6
+hyperflash verify --tier 6
 ```
 
 ---
 
 ### 3. OpenCode / OpenHands / SWE-Agent
 
-Scaffold full HyperFlash rules and MCP integration with one command:
+OpenCode supports dedicated named agents natively. HyperFlash installs as a first-class persona with custom system prompts and tools.
+
+#### Step 1: Automatic Setup via CLI
 ```bash
-hyperflash init --target opencode # Configures OPENCODE.md & opencode.json
+hyperflash init --target opencode
+```
+This configures:
+- `OPENCODE.md`: OpenCode engineering constitution.
+- `.opencode/agents/hyperflash.json`: Dedicated agent persona definition.
+- `opencode.json`: Declares `agent: "hyperflash"`, registers agent configuration, and wires the `hyperflash` stdio MCP server.
+
+#### Step 2: Launch OpenCode with HyperFlash Persona
+```bash
+# Direct OpenCode CLI
+opencode --agent hyperflash
+
+# Or via the universal runner
+hyperflash launch opencode
 ```
 
-HyperFlash scripts can also be invoked directly inside any autonomous agent container or Python environment:
+#### Step 3: Custom Agent Harnesses (Python / Containers)
+HyperFlash guardrails can also be evaluated programmatically inside any agent container:
 
 ```python
 # In your custom agent loop or OpenHands execution environment
@@ -324,33 +364,24 @@ def run_hyperflash_guards(tool_call: dict) -> bool:
 
 ### 4. Cursor & Windsurf IDEs
 
-Scaffold full HyperFlash rules and MCP integration with one command:
+HyperFlash delivers always-on rule enforcement and tool capabilities for modern AI-native IDEs.
+
+#### Step 1: Automatic Setup via CLI
 ```bash
-hyperflash init --target cursor   # Configures .cursorrules & .cursor/mcp.json
-hyperflash init --target windsurf # Configures .windsurfrules & .windsurf/mcp.json
+hyperflash init --target cursor   # Configures .cursorrules, .cursor/rules/hyperflash.mdc, .cursor/mcp.json
+hyperflash init --target windsurf # Configures .windsurfrules, .windsurf/rules/hyperflash.md, .windsurf/mcp.json
 ```
 
-Or manually configure your workspace:
-- **Rules file (`.cursorrules` or `.windsurfrules`):**
-```markdown
-# HyperFlash Engineering Rules
-- Always view the entire target file before proposing edits.
-- Never truncate code with comments like `// existing code remains the same`. Write the entire functional block.
-- Always include exhaustive static type annotations on all parameters and return values.
-- Before claiming a task is done, run terminal commands to verify compilation and tests.
-- Emit a `decision:` and `pre_mortem:` YAML block before multi-file edits.
+#### Step 2: Launch IDE with HyperFlash
+```bash
+hyperflash launch cursor
+hyperflash launch windsurf
 ```
-- **MCP Server (`.cursor/mcp.json` or `.windsurf/mcp.json`):**
-```json
-{
-  "mcpServers": {
-    "hyperflash": {
-      "command": "hyperflash",
-      "args": ["mcp"]
-    }
-  }
-}
-```
+
+#### What Gets Configured:
+- **Cursor Rules MDC (`.cursor/rules/hyperflash.mdc`):** Enforces `alwaysApply: true` so Cursor Composer and Agent mode strictly observe the 8 Invariants across all edits.
+- **Windsurf Rules (`.windsurf/rules/hyperflash.md` & `.windsurfrules`):** Guides Cascade Agent with zero-elision and ground-before-mutating constraints.
+- **MCP Integration (`mcp.json`):** Exposes `hyperflash_safe_patch`, `hyperflash_verify`, and `hyperflash_get_symbol_graph` directly to the IDE agent.
 
 ---
 
@@ -367,7 +398,7 @@ hyperflash init --target git
 ```yaml
 repos:
   - repo: https://github.com/Virat-Ghatge/hyperflash
-    rev: v1.0.0
+    rev: v1.1.0
     hooks:
       - id: hyperflash-zero-elision
       - id: hyperflash-verify

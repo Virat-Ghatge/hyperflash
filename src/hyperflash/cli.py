@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Sequence
@@ -169,6 +171,42 @@ def cmd_check_elision(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_launch(args: argparse.Namespace) -> int:
+    """Handles 'hyperflash launch' command."""
+    harness: str = args.harness.lower()
+    extra_args: list[str] = list(getattr(args, "extra_args", []) or [])
+
+    cmd_map: dict[str, list[str]] = {
+        "opencode": ["opencode", "--agent", "hyperflash"],
+        "antigravity": ["agy", "--agent", "hyperflash"],
+        "agy": ["agy", "--agent", "hyperflash"],
+        "claude": ["claude"],
+        "cursor": ["cursor", "."],
+        "windsurf": ["windsurf", "."],
+    }
+
+    base_cmd = cmd_map.get(harness)
+    if not base_cmd:
+        print(f"❌ Unknown harness '{harness}'. Choose from opencode, claude, cursor, windsurf, antigravity, agy.")
+        return 1
+
+    binary_name = base_cmd[0]
+    if not shutil.which(binary_name):
+        print(f"❌ Harness '{harness}' not found in PATH. Please install it first.")
+        return 1
+
+    full_cmd: list[str] = base_cmd + extra_args
+    try:
+        proc = subprocess.run(full_cmd)
+        return proc.returncode
+    except FileNotFoundError:
+        print(f"❌ Harness '{harness}' not found in PATH. Please install it first.")
+        return 1
+    except Exception as exc:
+        print(f"❌ Error launching '{harness}': {exc}")
+        return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Constructs the CLI argument parser."""
     parser = argparse.ArgumentParser(
@@ -197,6 +235,19 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default=".",
         help="Workspace root directory (default: .)",
+    )
+
+    # launch
+    p_launch = subparsers.add_parser("launch", help="Launch your preferred coding harness with HyperFlash agent active")
+    p_launch.add_argument(
+        "harness",
+        choices=["opencode", "claude", "cursor", "windsurf", "antigravity", "agy"],
+        help="Target harness",
+    )
+    p_launch.add_argument(
+        "extra_args",
+        nargs=argparse.REMAINDER,
+        help="Additional arguments forwarded to harness",
     )
 
     # mcp
@@ -293,6 +344,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "decide": cmd_decide,
         "status": cmd_status,
         "check-elision": cmd_check_elision,
+        "launch": cmd_launch,
     }
 
     handler = dispatch.get(args.command)
