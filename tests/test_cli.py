@@ -30,7 +30,7 @@ def test_cli_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
         parser.parse_args(["--version"])
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "hyperflash 1.2.0" in captured.out
+    assert "hyperflash 1.2.1" in captured.out
 
 
 def test_cli_decide_updates_contract(tmp_path: Path) -> None:
