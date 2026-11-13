@@ -173,12 +173,9 @@ HyperFlash runs everywhere developers build software. Choose your harness:
 HyperFlash integrates directly into the Antigravity Desktop IDE and the terminal `agy` CLI via native lifecycle hooks.
 
 #### In the Antigravity Desktop IDE
-- **In-Prompt Mention (`@hyperflash`):** Type `@hyperflash` in the chat input. Antigravity autocompletes the orchestrator and locks the session into HyperFlash invariants:
-  ```text
-  @hyperflash Fix the concurrency race condition in src/cache.py and verify with tests/test_cache.py
-  ```
-- **Agent Switcher Dropdown:** Click the Agent selector above the chat field and choose **`hyperflash`**.
-- **Slash Command:** Type `/agent hyperflash` to switch the active conversation to HyperFlash.
+- **Agent Dropdown Selection:** Select **`hyperflash`** from the **Agent Dropdown** above the chat prompt in the Antigravity Desktop IDE.
+- **Slash Command:** Type `/agent hyperflash` in the chat to switch the active conversation agent (use `/agents` to list all installed agents).
+- **Context Mention Distinction:** Unlike Cursor or Copilot where `@` can invoke agents, `@` in the Antigravity IDE opens the Context Mention palette (`@file`, `@folder`, `@docs`). In Antigravity, switch agents using the **Agent Dropdown** or `/agent hyperflash`.
 
 #### In the Antigravity Terminal CLI (`agy`)
 - **Launch interactive session:**
@@ -188,6 +185,10 @@ HyperFlash integrates directly into the Antigravity Desktop IDE and the terminal
 - **Run non-interactive command:**
   ```bash
   agy --agent hyperflash -i "Implement JWT validation middleware with full unit test coverage"
+  ```
+- **Switch agent inside session:**
+  ```text
+  /agent hyperflash
   ```
 
 ---
@@ -308,7 +309,7 @@ The primary orchestrator (`hyperflash`) coordinates the lifecycle and performs r
 
 ```mermaid
 flowchart TD
-    User([User Prompt / IDE @hyperflash]) --> Router["hyperflash (Router Orchestrator)<br/>• Read-Only & Scope Analysis<br/>• Adaptive Complexity Routing"]
+    User([User Prompt / Agent Dropdown: hyperflash]) --> Router["hyperflash (Router Orchestrator)<br/>• Read-Only & Scope Analysis<br/>• Adaptive Complexity Routing"]
     
     Router -->|Planning: Compact / Deep| Recon["hyperflash-investigator<br/>(AST & Workspace Recon)"]
     Router -->|Call-Graph Audit| Audit["hyperflash-impact-auditor<br/>(Symbol Graph Tracer)"]
@@ -329,12 +330,12 @@ flowchart TD
 
 | Agent Name | Permitted Tools | Core Responsibility |
 |---|---|---|
-| **`hyperflash`** | `read_file`, `grep_search`, `subagent_hooks` | **Router Orchestrator.** Evaluates task complexity, initializes `contract.json`, and coordinates subagents. Zero write tools. |
-| **`hyperflash-investigator`** | `read_file`, `grep_search`, `list_dir` | **Read-Only Reconnaissance.** Inspects target files, identifies relevant test suites, and localizes implementation areas. |
-| **`hyperflash-impact-auditor`** | `read_file`, `symbol_graph` | **Dependency Auditor.** Traces upstream callers across the AST symbol graph to lock `allowed_write_scope` before edits. |
-| **`hyperflash-patch-executor`** | `edit_file`, `write_file` | **Surgical Implementation.** Applies minimal diffs strictly within `allowed_write_scope`. Enforces Chunked Long-Decode and static types. |
-| **`hyperflash-reviewer`** | `read_file`, `run_command` | **Code Reviewer.** Audits `git diff` against structural invariants, performance regressions, and architectural boundaries. |
-| **`hyperflash-test-adversary`** | `run_command` | **Adversarial QA.** Executes compilers, type checkers, and test suites across the 9-Tier Verification Hierarchy. |
+| **`hyperflash`** | `view_file`, `grep_search`, `find_by_name`, `invoke_subagent` | **Router Orchestrator.** Evaluates task complexity, initializes `contract.json`, and coordinates subagents. Zero write tools. |
+| **`hyperflash-investigator`** | `view_file`, `grep_search`, `find_by_name` | **Read-Only Reconnaissance.** Inspects target files, identifies relevant test suites, and localizes implementation areas. |
+| **`hyperflash-impact-auditor`** | `view_file`, `grep_search`, `find_by_name` | **Dependency Auditor.** Traces upstream callers across the AST symbol graph to lock `allowed_write_scope` before edits. |
+| **`hyperflash-patch-executor`** | `view_file`, `replace_file_content`, `write_to_file` | **Surgical Implementation.** Applies minimal diffs strictly within `allowed_write_scope`. Enforces Chunked Long-Decode and static types. |
+| **`hyperflash-reviewer`** | `view_file`, `grep_search`, `run_command` | **Code Reviewer.** Audits `git diff` against structural invariants, performance regressions, and architectural boundaries. |
+| **`hyperflash-test-adversary`** | `view_file`, `grep_search`, `run_command` | **Adversarial QA.** Executes compilers, type checkers, and test suites across the 9-Tier Verification Hierarchy. |
 
 ---
 

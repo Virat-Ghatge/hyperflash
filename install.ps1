@@ -13,8 +13,9 @@ Copy-Item "$PSScriptRoot\src\skills\hyperflash\scripts\*.py" "$DEST\skills\hyper
 Copy-Item "$PSScriptRoot\src\scripts\*.py" "$DEST\scripts\" -Force
 
 # Non-destructive hook merge
+$PythonCmd = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
 $NormalizedDest = $DEST -replace '\\', '/'
-$TemplateRaw = (Get-Content "$PSScriptRoot\src\hooks.json" -Raw) -replace '{{CONFIG_DIR}}', $NormalizedDest
+$TemplateRaw = (Get-Content "$PSScriptRoot\src\hooks.json" -Raw) -replace '{{CONFIG_DIR}}', $NormalizedDest -replace 'python3', $PythonCmd
 $NewHooks = $TemplateRaw | ConvertFrom-Json
 
 $DestHooksPath = Join-Path $DEST "hooks.json"
@@ -32,4 +33,4 @@ foreach ($prop in $NewHooks.PSObject.Properties) {
 $ExistingHooks | ConvertTo-Json -Depth 10 | Set-Content $DestHooksPath -Force
 
 Write-Host "[OK] HyperFlash successfully installed!" -ForegroundColor Green
-Write-Host "Type '@hyperflash' in the Antigravity Desktop IDE chat or run 'agy --agent hyperflash' in your terminal."
+Write-Host "Select 'hyperflash' from the Agent dropdown in the Antigravity Desktop IDE, or run 'agy --agent hyperflash' in your terminal."

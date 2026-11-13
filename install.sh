@@ -45,4 +45,4 @@ EOF
 
 echo ""
 echo "[OK] HyperFlash successfully installed!"
-echo "Type '@hyperflash' in the Antigravity Desktop IDE chat or run 'agy --agent hyperflash' in your terminal."
+echo "Select 'hyperflash' from the Agent dropdown in the Antigravity Desktop IDE, or run 'agy --agent hyperflash' in your terminal."
