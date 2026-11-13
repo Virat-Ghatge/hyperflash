@@ -18,6 +18,7 @@
 
 <br/>
 
+[![PyPI](https://img.shields.io/pypi/v/hyperflash?style=for-the-badge&logo=pypi&color=3775A9)](https://pypi.org/project/hyperflash/)
 [![Stars](https://img.shields.io/github/stars/Virat-Ghatge/hyperflash?style=for-the-badge&logo=github&color=FFD700)](https://github.com/Virat-Ghatge/hyperflash/stargazers)
 [![Forks](https://img.shields.io/github/forks/Virat-Ghatge/hyperflash?style=for-the-badge&logo=github&color=60A5FA)](https://github.com/Virat-Ghatge/hyperflash/network/members)
 [![Issues](https://img.shields.io/github/issues/Virat-Ghatge/hyperflash?style=for-the-badge&color=34D399)](https://github.com/Virat-Ghatge/hyperflash/issues)
@@ -139,11 +140,72 @@ How does HyperFlash compare to standard prompting and heavy unconstrained swarms
 
 ---
 
-## 🚀 Instant 30-Second Quickstart
+## 🚀 Instant Quickstart
 
-Install HyperFlash non-destructively in your global or local environment.
+Install HyperFlash universally via `pip`:
 
-### Linux & macOS
+```bash
+pip install hyperflash
+```
+
+### 1-Click Multi-Platform Initialization
+Scaffold your preferred IDE or agent harness in 1 second:
+
+```bash
+# Configure Cursor, Claude Code, Windsurf, Git Hooks, and Antigravity in one command
+hyperflash init
+
+# Or target your specific harness:
+hyperflash init --target cursor
+hyperflash init --target claude
+hyperflash init --target windsurf
+hyperflash init --target git
+hyperflash init --target antigravity
+```
+
+### 🔌 Universal MCP Server Integration
+HyperFlash features a built-in Model Context Protocol (MCP) server running over stdio with **zero external dependencies**. Adding it gives your agent surgical safe patching (`hyperflash_safe_patch`), workspace AST symbol inspection (`hyperflash_get_symbol_graph`), and deterministic multi-tier verification (`hyperflash_verify`):
+
+#### In Cursor (`.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "hyperflash": {
+      "command": "hyperflash",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### In Claude Code (`~/.claude/claude.json` or `.claude.json`):
+```json
+{
+  "mcpServers": {
+    "hyperflash": {
+      "command": "hyperflash",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### In Windsurf (`.windsurf/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "hyperflash": {
+      "command": "hyperflash",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Or Clone & Run Local Shell Installer
+If you are developing locally without `pip`:
+
+#### Linux & macOS
 ```bash
 git clone https://github.com/Virat-Ghatge/hyperflash.git
 cd hyperflash
@@ -151,7 +213,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-### Windows (PowerShell)
+#### Windows (PowerShell)
 ```powershell
 git clone https://github.com/Virat-Ghatge/hyperflash.git
 cd hyperflash
@@ -244,9 +306,14 @@ def run_hyperflash_guards(tool_call: dict) -> bool:
 
 ### 4. Cursor & Windsurf IDEs
 
-Drop HyperFlash rules directly into your workspace configuration:
+Scaffold full HyperFlash rules and MCP integration with one command:
+```bash
+hyperflash init --target cursor   # Configures .cursorrules & .cursor/mcp.json
+hyperflash init --target windsurf # Configures .windsurfrules & .windsurf/mcp.json
+```
 
-#### In `.cursorrules` or `.windsurfrules`:
+Or manually configure your workspace:
+- **Rules file (`.cursorrules` or `.windsurfrules`):**
 ```markdown
 # HyperFlash Engineering Rules
 - Always view the entire target file before proposing edits.
@@ -255,6 +322,17 @@ Drop HyperFlash rules directly into your workspace configuration:
 - Before claiming a task is done, run terminal commands to verify compilation and tests.
 - Emit a `decision:` and `pre_mortem:` YAML block before multi-file edits.
 ```
+- **MCP Server (`.cursor/mcp.json` or `.windsurf/mcp.json`):**
+```json
+{
+  "mcpServers": {
+    "hyperflash": {
+      "command": "hyperflash",
+      "args": ["mcp"]
+    }
+  }
+}
+```
 
 ---
 
@@ -262,7 +340,22 @@ Drop HyperFlash rules directly into your workspace configuration:
 
 Enforce HyperFlash invariants automatically on every `git commit` or pull request, preventing elided code and unverified mutations from ever reaching your repository:
 
-#### Git Pre-Commit Hook (`.git/hooks/pre-commit`)
+#### Automatic Setup via CLI:
+```bash
+hyperflash init --target git
+```
+
+#### Pre-Commit Framework Configuration (`.pre-commit-config.yaml`):
+```yaml
+repos:
+  - repo: https://github.com/Virat-Ghatge/hyperflash
+    rev: v1.0.0
+    hooks:
+      - id: hyperflash-zero-elision
+      - id: hyperflash-verify
+```
+
+#### Native Git Pre-Commit Hook (`.git/hooks/pre-commit`):
 ```bash
 #!/usr/bin/env bash
 # HyperFlash Zero-Elision & Linting Guard
@@ -273,6 +366,11 @@ if git diff --cached | grep -E '(//|\#|\/\*)[[:space:]]*(\.\.\.|rest of|existing
     echo "❌ [HYPERFLASH ERROR] Code elision detected in staged changes!"
     echo "   Never commit '// ... rest of code' or placeholder comments."
     exit 1
+fi
+
+# Run verification if hyperflash is available
+if command -v hyperflash &> /dev/null; then
+    hyperflash verify --tier 5
 fi
 
 echo "✅ HyperFlash checks passed."
@@ -419,6 +517,8 @@ hyperflash/
 │   │   └── feature_request.md              # Architectural proposal template
 │   ├── workflows/                          # GitHub Actions CI/CD workflows
 │   └── PULL_REQUEST_TEMPLATE.md            # Invariant compliance checklist
+├── pyproject.toml                          # Universal Python packaging & CLI entrypoint
+├── .pre-commit-hooks.yaml                  # Pre-commit hook definitions for Git
 ├── install.sh                              # Linux/macOS non-destructive installer
 ├── install.ps1                             # Windows PowerShell non-destructive installer
 ├── uninstall.sh                            # POSIX clean uninstaller
@@ -428,7 +528,17 @@ hyperflash/
 ├── SECURITY.md                             # Vulnerability disclosure policy
 ├── LICENSE                                 # MIT License
 ├── README.md                               # Universal runtime documentation
+├── tests/                                  # Pytest unit & integration test suite
+│   ├── test_core.py                        # Invariant guards & AST symbol graph tests
+│   ├── test_cli.py                         # CLI subcommands & parser tests
+│   └── test_mcp.py                         # Stdio MCP server & JSON-RPC tests
 └── src/
+    ├── hyperflash/                         # Core Python package & MCP server
+    │   ├── __init__.py                     # Package exports & version
+    │   ├── core.py                         # Invariants, AST indexer, contract, verification
+    │   ├── polyglot.py                     # Multi-platform config generators
+    │   ├── mcp_server.py                   # Stdio JSON-RPC 2.0 MCP server
+    │   └── cli.py                          # Unified CLI entrypoint
     ├── AGENTS.md                           # Global system constitution
     ├── hooks.json                          # Portable lifecycle hooks template
     ├── rules/

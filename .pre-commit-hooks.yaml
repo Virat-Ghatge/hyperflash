@@ -1,0 +1,13 @@
+- id: hyperflash-zero-elision
+  name: hyperflash-zero-elision
+  description: Hard-blocks lazy code truncation (// ... rest of code, TODO: implement) in staged changes
+  entry: hyperflash check-elision
+  language: python
+  types: [text]
+
+- id: hyperflash-verify
+  name: hyperflash-verify
+  description: Executes HyperFlash deterministic verification hierarchy before git commit
+  entry: hyperflash verify --tier 5
+  language: python
+  pass_filenames: false
