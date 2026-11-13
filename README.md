@@ -23,7 +23,7 @@
 [![Forks](https://img.shields.io/github/forks/Virat-Ghatge/hyperflash?style=for-the-badge&logo=github&color=60A5FA)](https://github.com/Virat-Ghatge/hyperflash/network/members)
 [![Issues](https://img.shields.io/github/issues/Virat-Ghatge/hyperflash?style=for-the-badge&color=34D399)](https://github.com/Virat-Ghatge/hyperflash/issues)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
-[![Platforms](https://img.shields.io/badge/Harnesses-Antigravity%20|%20Claude%20Code%20|%20OpenCode%20|%20Cursor%20|%20CLI-FF5722.svg?style=for-the-badge)](#-multi-platform-setup-guides)
+[![Platforms](https://img.shields.io/badge/Harnesses-Antigravity%20|%20Claude%20Code%20|%20OpenCode%20|%20Cursor%20|%20Windsurf%20|%20Cline%20|%20Roo-FF5722.svg?style=for-the-badge)](#-multi-platform-setup-guides)
 [![Engines](https://img.shields.io/badge/Engines-Gemini%20|%20Claude%20|%20OpenAI%20|%20DeepSeek%20|%20Ollama-8E75C2.svg?style=for-the-badge)](#-universal-model--harness-compatibility)
 [![Verification](https://img.shields.io/badge/Verification-9--Tier%20Deterministic%20Hierarchy-00C853.svg?style=for-the-badge)](#-the-9-tier-verification-hierarchy)
 
@@ -156,28 +156,32 @@ pip install hyperflash
 Scaffold your preferred IDE or agent harness in 1 second:
 
 ```bash
-# Configure Cursor, Claude Code, Windsurf, Git Hooks, Antigravity, and OpenCode in one command
+# Configure Cursor, Claude Code, Windsurf, Git Hooks, Antigravity, OpenCode, Cline, and Roo Code in one command
 hyperflash init
 
 # Configure globally across ALL workspaces (user home directory):
-# Sets up OpenCode (~/.config/opencode/opencode.json), Claude Code (~/.claude.json), and Antigravity globally
+# Sets up OpenCode, Claude Code, Windsurf, Cursor, Cline, Roo Code, and Antigravity globally
 hyperflash init --global    # or: hyperflash init -g
 
 # Or target your specific harness globally or locally:
+hyperflash init --target claude --global
+hyperflash init --target windsurf --global
 hyperflash init --target opencode --global
-hyperflash init --target cursor
-hyperflash init --target claude
-hyperflash init --target windsurf
+hyperflash init --target cursor --global
+hyperflash init --target cline --global
+hyperflash init --target roo --global
 hyperflash init --target git
 hyperflash init --target antigravity
-hyperflash init --target opencode
 ```
 
 > [!TIP]
 > **Global Configuration Mode (`--global` / `-g`):**
-> When running `hyperflash init --global` (or `-g`), HyperFlash configures your user home directory rather than the current working folder. This means:
-> - **OpenCode:** Registers HyperFlash agent persona and MCP server in `~/.config/opencode/opencode.json` so `opencode --agent hyperflash` works anywhere on your system.
-> - **Claude Code:** Registers the MCP server in `~/.claude.json` and slash command in `~/.claude/commands/hyperflash.md`.
+> When running `hyperflash init --global` (or `-g`), HyperFlash configures your user home directory rather than the current working folder:
+> - **Claude Code:** Registers global constitution in `~/.claude/CLAUDE.md`, agent persona in `~/.claude/agents/hyperflash.md`, slash command in `~/.claude/commands/hyperflash.md`, and stdio MCP server in `~/.claude.json`. (Workspace mode also configures `.mcp.json`).
+> - **Windsurf:** Writes primary global memory rules to `~/.codeium/windsurf/memories/global_rules.md`, primary global MCP to `~/.codeium/windsurf/mcp_config.json`, and fallback configs to `~/.windsurf/` and `~/.windsurfrules`.
+> - **OpenCode:** Registers agent markdown in `~/.config/opencode/agents/hyperflash.md` and agent configuration & MCP server in `~/.config/opencode/opencode.json`.
+> - **Cursor:** Writes global rules to `~/.cursorrules`, agent rules to `~/.cursor/rules/hyperflash.mdc`, and MCP to `~/.cursor/mcp.json`.
+> - **Cline & Roo Code:** Automatically locates and merges MCP settings into VS Code globalStorage (`saoudrizwan.claude-dev` and `rooveterinaryinc.roo-cline`) across Windows, macOS, and Linux, alongside rules in `~/.clinerules` and `~/.roorules`.
 > - **Antigravity:** Installs skills, agents, and rules globally in `~/.gemini/config/`.
 > You only need to run this once—no per-repository initialization required!
 
@@ -202,7 +206,7 @@ hyperflash launch windsurf
 ### 🔌 Universal MCP Server Integration
 HyperFlash features a built-in Model Context Protocol (MCP) server running over stdio with **zero external dependencies**. Adding it gives your agent surgical safe patching (`hyperflash_safe_patch`), workspace AST symbol inspection (`hyperflash_get_symbol_graph`), and deterministic multi-tier verification (`hyperflash_verify`):
 
-#### In Cursor (`.cursor/mcp.json`):
+#### In Cursor (`.cursor/mcp.json` or `~/.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -214,7 +218,7 @@ HyperFlash features a built-in Model Context Protocol (MCP) server running over 
 }
 ```
 
-#### In Claude Code (`~/.claude/claude.json` or `.claude.json`):
+#### In Claude Code (`~/.claude.json` or `.mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -226,7 +230,7 @@ HyperFlash features a built-in Model Context Protocol (MCP) server running over 
 }
 ```
 
-#### In Windsurf (`.windsurf/mcp.json`):
+#### In Windsurf (`~/.codeium/windsurf/mcp_config.json` or `.windsurf/mcp.json`):
 ```json
 {
   "mcpServers": {
@@ -238,7 +242,19 @@ HyperFlash features a built-in Model Context Protocol (MCP) server running over 
 }
 ```
 
-#### In OpenCode (`opencode.json`):
+#### In OpenCode (`~/.config/opencode/opencode.json` or `opencode.json`):
+```json
+{
+  "mcpServers": {
+    "hyperflash": {
+      "command": "hyperflash",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### In Cline & Roo Code (`cline_mcp_settings.json`):
 ```json
 {
   "mcpServers": {
@@ -305,16 +321,28 @@ HyperFlash integrates directly into the Antigravity Desktop IDE and the terminal
 
 ### 2. Claude Code (Anthropic CLI)
 
-You can bring HyperFlash's invariants into Claude Code using project memory, pre/post tool hooks, and native slash commands.
+You can bring HyperFlash's invariants into Claude Code using project memory, pre/post tool hooks, agent definitions, and native slash commands.
 
 #### Step 1: Automatic Setup via CLI
 ```bash
+# Option A: Global setup (recommended) - active across all Claude Code sessions:
+hyperflash init --target claude --global
+
+# Option B: Workspace setup - scoped to current project:
 hyperflash init --target claude
 ```
 This automatically configures:
-- `CLAUDE.md`: System reliability constitution.
-- `.claude.json`: Local stdio MCP server for safe patching and AST symbol graphs.
-- `.claude/commands/hyperflash.md`: Dedicated agent slash command.
+- **Global (`--global`):**
+  - `~/.claude/CLAUDE.md`: System reliability constitution.
+  - `~/.claude/commands/hyperflash.md`: Dedicated agent slash command.
+  - `~/.claude/agents/hyperflash.md`: Native Claude Code subagent persona.
+  - `~/.claude.json`: User-level stdio MCP server for safe patching and AST symbol graphs.
+- **Workspace:**
+  - `CLAUDE.md`: Repository reliability constitution.
+  - `.claude/commands/hyperflash.md`: Workspace slash command.
+  - `.claude/agents/hyperflash.md`: Workspace agent persona.
+  - `.claude.json`: Project MCP configuration.
+  - `.mcp.json`: Standard Claude Code workspace MCP configuration.
 
 #### Step 2: Activate HyperFlash in Claude Code
 Inside any Claude Code terminal session, simply run:
@@ -349,9 +377,11 @@ hyperflash init --target opencode
 
 **Global Setup (`--global`) configures:**
 - `~/.config/opencode/opencode.json`: Declares the global `hyperflash` agent persona and registers the stdio MCP server without overwriting existing agents or servers.
+- `~/.config/opencode/agents/hyperflash.md`: Global markdown agent persona enforcing the 8 Invariants.
 
 **Local Setup configures:**
 - `OPENCODE.md`: OpenCode engineering constitution.
+- `.opencode/agents/hyperflash.md`: Local markdown agent persona.
 - `.opencode/agents/hyperflash.json`: Dedicated agent persona definition.
 - `opencode.json`: Declares `agent: "hyperflash"`, registers agent configuration, and wires the `hyperflash` stdio MCP server.
 
@@ -393,8 +423,13 @@ HyperFlash delivers always-on rule enforcement and tool capabilities for modern 
 
 #### Step 1: Automatic Setup via CLI
 ```bash
+# Configure workspace
 hyperflash init --target cursor   # Configures .cursorrules, .cursor/rules/hyperflash.mdc, .cursor/mcp.json
 hyperflash init --target windsurf # Configures .windsurfrules, .windsurf/rules/hyperflash.md, .windsurf/mcp.json
+
+# Or configure globally:
+hyperflash init --target cursor --global    # ~/.cursorrules, ~/.cursor/rules/hyperflash.mdc, ~/.cursor/mcp.json
+hyperflash init --target windsurf --global  # ~/.codeium/windsurf/memories/global_rules.md, mcp_config.json, ~/.windsurf/
 ```
 
 #### Step 2: Launch IDE with HyperFlash
@@ -405,12 +440,38 @@ hyperflash launch windsurf
 
 #### What Gets Configured:
 - **Cursor Rules MDC (`.cursor/rules/hyperflash.mdc`):** Enforces `alwaysApply: true` so Cursor Composer and Agent mode strictly observe the 8 Invariants across all edits.
-- **Windsurf Rules (`.windsurf/rules/hyperflash.md` & `.windsurfrules`):** Guides Cascade Agent with zero-elision and ground-before-mutating constraints.
+- **Windsurf Global Rules (`~/.codeium/windsurf/memories/global_rules.md`):** Permanent global memory rules for Cascade Agent with zero-elision and ground-before-mutating constraints.
+- **Windsurf MCP (`~/.codeium/windsurf/mcp_config.json` & `.windsurf/mcp.json`):** Wires the local HyperFlash stdio MCP server.
 - **MCP Integration (`mcp.json`):** Exposes `hyperflash_safe_patch`, `hyperflash_verify`, and `hyperflash_get_symbol_graph` directly to the IDE agent.
 
 ---
 
-### 5. Git Pre-Commit & CI/CD Quality Gates
+### 5. Cline & Roo Code (VS Code Extensions & CLI)
+
+HyperFlash provides seamless guardrail enforcement and MCP server integration for **Cline** (`saoudrizwan.claude-dev`) and **Roo Code** (`rooveterinaryinc.roo-cline`).
+
+#### Step 1: Automatic Setup via CLI
+```bash
+# Workspace setup (creates .clinerules or .roorules, wires MCP settings):
+hyperflash init --target cline
+hyperflash init --target roo
+
+# Global setup (wires VS Code globalStorage MCP settings and global rules):
+hyperflash init --target cline --global
+hyperflash init --target roo --global
+```
+
+#### What Gets Configured:
+- **VS Code Extension MCP Storage:** HyperFlash automatically resolves the platform-specific `cline_mcp_settings.json` across:
+  - **Windows:** `%APPDATA%\Code\User\globalStorage\<extension>\settings\cline_mcp_settings.json`
+  - **macOS:** `~/Library/Application Support/Code/User/globalStorage/<extension>/settings/cline_mcp_settings.json`
+  - **Linux:** `~/.config/Code/User/globalStorage/<extension>/settings/cline_mcp_settings.json`
+  - **CLI:** `~/.cline/data/settings/cline_mcp_settings.json`
+- **Rule Constraints (`.clinerules` & `.roorules`):** Embeds the 8 Watcher Invariants so the agent never elides code, respects task boundaries, and mandates verification before task conclusion.
+
+---
+
+### 6. Git Pre-Commit & CI/CD Quality Gates
 
 Enforce HyperFlash invariants automatically on every `git commit` or pull request, preventing elided code and unverified mutations from ever reaching your repository:
 

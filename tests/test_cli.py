@@ -30,7 +30,7 @@ def test_cli_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
         parser.parse_args(["--version"])
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "hyperflash 1.1.2" in captured.out
+    assert "hyperflash 1.2.0" in captured.out
 
 
 def test_cli_decide_updates_contract(tmp_path: Path) -> None:
@@ -87,7 +87,7 @@ def test_cli_init_cursor(tmp_path: Path) -> None:
 
 
 def test_cmd_init_claude(tmp_path: Path) -> None:
-    """Verifies that 'hyperflash init --target claude' scaffolds CLAUDE.md, slash command, and .claude.json."""
+    """Verifies that 'hyperflash init --target claude' scaffolds CLAUDE.md, slash command, agent md, .mcp.json, and .claude.json."""
     parser = build_parser()
     args = parser.parse_args(["init", "--target", "claude", "--workspace", str(tmp_path)])
     exit_code = cmd_init(args)
@@ -101,10 +101,19 @@ def test_cmd_init_claude(tmp_path: Path) -> None:
     assert cmd_file.exists()
     assert "Activate HyperFlash Autonomous Engineering Reliability Agent" in cmd_file.read_text(encoding="utf-8")
 
+    agent_file = tmp_path / ".claude" / "agents" / "hyperflash.md"
+    assert agent_file.exists()
+    assert "HyperFlash Engineering Reliability Agent for Claude Code" in agent_file.read_text(encoding="utf-8")
+
     claude_json = tmp_path / ".claude.json"
     assert claude_json.exists()
     data = json.loads(claude_json.read_text(encoding="utf-8"))
     assert "hyperflash" in data["mcpServers"]
+
+    mcp_json = tmp_path / ".mcp.json"
+    assert mcp_json.exists()
+    mcp_data = json.loads(mcp_json.read_text(encoding="utf-8"))
+    assert "hyperflash" in mcp_data["mcpServers"]
 
 
 def test_cmd_init_windsurf(tmp_path: Path) -> None:
@@ -139,6 +148,10 @@ def test_cmd_init_opencode(tmp_path: Path) -> None:
     assert opencode_md.exists()
     assert "HyperFlash Reliability Constitution for OpenCode" in opencode_md.read_text(encoding="utf-8")
 
+    agent_md = tmp_path / ".opencode" / "agents" / "hyperflash.md"
+    assert agent_md.exists()
+    assert "HyperFlash Engineering Reliability Agent for OpenCode" in agent_md.read_text(encoding="utf-8")
+
     agent_file = tmp_path / ".opencode" / "agents" / "hyperflash.json"
     assert agent_file.exists()
     agent_data = json.loads(agent_file.read_text(encoding="utf-8"))
@@ -153,6 +166,30 @@ def test_cmd_init_opencode(tmp_path: Path) -> None:
     assert "hyperflash" in config_data["mcpServers"]
 
 
+def test_cmd_init_cline_workspace(tmp_path: Path) -> None:
+    """Verifies that 'hyperflash init --target cline' scaffolds .clinerules in workspace."""
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "cline", "--workspace", str(tmp_path)])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    cline_rules = tmp_path / ".clinerules"
+    assert cline_rules.exists()
+    assert "HyperFlash Engineering Rules for Cline" in cline_rules.read_text(encoding="utf-8")
+
+
+def test_cmd_init_roo_workspace(tmp_path: Path) -> None:
+    """Verifies that 'hyperflash init --target roo' scaffolds .roorules in workspace."""
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "roo", "--workspace", str(tmp_path)])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    roo_rules = tmp_path / ".roorules"
+    assert roo_rules.exists()
+    assert "HyperFlash Engineering Rules for Roo Code" in roo_rules.read_text(encoding="utf-8")
+
+
 def test_cli_init_all(tmp_path: Path) -> None:
     """Verifies that 'hyperflash init --target all' scaffolds files for all harnesses."""
     parser = build_parser()
@@ -162,14 +199,22 @@ def test_cli_init_all(tmp_path: Path) -> None:
 
     assert (tmp_path / ".cursorrules").exists()
     assert (tmp_path / ".cursor" / "rules" / "hyperflash.mdc").exists()
+    assert (tmp_path / ".cursor" / "mcp.json").exists()
     assert (tmp_path / "CLAUDE.md").exists()
     assert (tmp_path / ".claude" / "commands" / "hyperflash.md").exists()
+    assert (tmp_path / ".claude" / "agents" / "hyperflash.md").exists()
+    assert (tmp_path / ".claude.json").exists()
+    assert (tmp_path / ".mcp.json").exists()
     assert (tmp_path / ".windsurfrules").exists()
     assert (tmp_path / ".windsurf" / "rules" / "hyperflash.md").exists()
+    assert (tmp_path / ".windsurf" / "mcp.json").exists()
     assert (tmp_path / ".git" / "hooks" / "pre-commit").exists()
     assert (tmp_path / "OPENCODE.md").exists()
+    assert (tmp_path / ".opencode" / "agents" / "hyperflash.md").exists()
     assert (tmp_path / ".opencode" / "agents" / "hyperflash.json").exists()
     assert (tmp_path / "opencode.json").exists()
+    assert (tmp_path / ".clinerules").exists()
+    assert (tmp_path / ".roorules").exists()
 
 
 def test_cli_init_global_flag_parsing() -> None:
@@ -206,6 +251,78 @@ def test_cli_init_opencode_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert "servers" in data["mcp"]
     assert "hyperflash" in data["mcp"]["servers"]
 
+    global_agent = fake_home / ".config" / "opencode" / "agents" / "hyperflash.md"
+    assert global_agent.exists()
+    assert "HyperFlash Engineering Reliability Agent for OpenCode" in global_agent.read_text(encoding="utf-8")
+
+
+def test_cli_init_claude_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that 'hyperflash init --target claude --global' writes to user global claude directory."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "claude", "--global"])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    assert (fake_home / ".claude" / "CLAUDE.md").exists()
+    assert (fake_home / ".claude" / "commands" / "hyperflash.md").exists()
+    assert (fake_home / ".claude" / "agents" / "hyperflash.md").exists()
+    assert (fake_home / ".claude.json").exists()
+    data = json.loads((fake_home / ".claude.json").read_text(encoding="utf-8"))
+    assert "hyperflash" in data["mcpServers"]
+
+
+def test_cli_init_windsurf_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that 'hyperflash init --target windsurf --global' writes primary and fallback windsurf configs."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "windsurf", "--global"])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    assert (fake_home / ".codeium" / "windsurf" / "memories" / "global_rules.md").exists()
+    assert (fake_home / ".codeium" / "windsurf" / "mcp_config.json").exists()
+    assert (fake_home / ".windsurf" / "rules" / "hyperflash.md").exists()
+    assert (fake_home / ".windsurf" / "mcp.json").exists()
+    assert (fake_home / ".windsurfrules").exists()
+
+
+def test_cli_init_cline_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that 'hyperflash init --target cline --global' configures global MCP settings and rules."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "cline", "--global"])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    assert (fake_home / ".clinerules").exists()
+    assert (fake_home / ".cline" / "data" / "settings" / "cline_mcp_settings.json").exists()
+    cline_mcp = json.loads((fake_home / ".cline" / "data" / "settings" / "cline_mcp_settings.json").read_text(encoding="utf-8"))
+    assert "hyperflash" in cline_mcp["mcpServers"]
+
+
+def test_cli_init_roo_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that 'hyperflash init --target roo --global' configures global Roo Code settings and rules."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "roo", "--global"])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    assert (fake_home / ".roorules").exists()
+
 
 def test_cli_init_all_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verifies that 'hyperflash init --global' configures harnesses in user home."""
@@ -219,10 +336,21 @@ def test_cli_init_all_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) ->
     assert exit_code == 0
 
     assert (fake_home / ".config" / "opencode" / "opencode.json").exists()
+    assert (fake_home / ".config" / "opencode" / "agents" / "hyperflash.md").exists()
     assert (fake_home / ".claude.json").exists()
+    assert (fake_home / ".claude" / "CLAUDE.md").exists()
     assert (fake_home / ".claude" / "commands" / "hyperflash.md").exists()
+    assert (fake_home / ".claude" / "agents" / "hyperflash.md").exists()
     assert (fake_home / ".cursorrules").exists()
+    assert (fake_home / ".cursor" / "rules" / "hyperflash.mdc").exists()
+    assert (fake_home / ".cursor" / "mcp.json").exists()
+    assert (fake_home / ".codeium" / "windsurf" / "memories" / "global_rules.md").exists()
+    assert (fake_home / ".codeium" / "windsurf" / "mcp_config.json").exists()
+    assert (fake_home / ".windsurf" / "rules" / "hyperflash.md").exists()
+    assert (fake_home / ".windsurf" / "mcp.json").exists()
     assert (fake_home / ".windsurfrules").exists()
+    assert (fake_home / ".clinerules").exists()
+    assert (fake_home / ".roorules").exists()
 
 
 def test_cli_launch_missing_harness(capsys: pytest.CaptureFixture[str]) -> None:

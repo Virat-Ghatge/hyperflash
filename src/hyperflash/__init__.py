@@ -14,7 +14,7 @@ from hyperflash.core import (
     save_contract,
 )
 
-__version__: str = "1.1.2"
+__version__: str = "1.2.0"
 
 __all__: list[str] = [
     "__version__",

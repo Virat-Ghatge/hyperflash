@@ -19,7 +19,15 @@ from hyperflash.core import (
     run_verification,
     save_contract,
 )
-from hyperflash.polyglot import setup_opencode
+from hyperflash.polyglot import (
+    GIT_PRE_COMMIT_CONTENT,
+    setup_claude,
+    setup_cline,
+    setup_git_hook,
+    setup_opencode,
+    setup_roo,
+    setup_windsurf,
+)
 
 
 def test_check_for_elision_detects_prohibited_patterns() -> None:
@@ -168,13 +176,17 @@ def test_run_verification_on_clean_workspace(tmp_path: Path) -> None:
 
 
 def test_setup_opencode(tmp_path: Path) -> None:
-    """Verifies that setup_opencode creates OPENCODE.md, agent persona, and opencode.json."""
+    """Verifies that setup_opencode creates OPENCODE.md, agent md, agent json, and opencode.json."""
     created = setup_opencode(tmp_path)
-    assert len(created) == 3
+    assert len(created) == 4
 
     opencode_md = tmp_path / "OPENCODE.md"
     assert opencode_md.exists()
     assert "HyperFlash Reliability Constitution for OpenCode" in opencode_md.read_text(encoding="utf-8")
+
+    agent_md = tmp_path / ".opencode" / "agents" / "hyperflash.md"
+    assert agent_md.exists()
+    assert "HyperFlash Engineering Reliability Agent for OpenCode" in agent_md.read_text(encoding="utf-8")
 
     agent_json = tmp_path / ".opencode" / "agents" / "hyperflash.json"
     assert agent_json.exists()
@@ -189,17 +201,22 @@ def test_setup_opencode(tmp_path: Path) -> None:
 
 
 def test_setup_opencode_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Verifies that setup_opencode(is_global=True) writes to ~/.config/opencode/opencode.json."""
+    """Verifies that setup_opencode(is_global=True) writes to ~/.config/opencode/opencode.json and ~/.config/opencode/agents/hyperflash.md."""
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: fake_home)
 
     created = setup_opencode(is_global=True)
-    assert len(created) == 1
+    assert len(created) == 2
 
     expected_path = fake_home / ".config" / "opencode" / "opencode.json"
-    assert str(expected_path) == created[0]
+    assert str(expected_path) in created
     assert expected_path.exists()
+
+    expected_agent = fake_home / ".config" / "opencode" / "agents" / "hyperflash.md"
+    assert str(expected_agent) in created
+    assert expected_agent.exists()
+    assert "HyperFlash Engineering Reliability Agent for OpenCode" in expected_agent.read_text(encoding="utf-8")
 
     data = json.loads(expected_path.read_text(encoding="utf-8"))
     assert "agent" in data
@@ -248,7 +265,7 @@ def test_setup_opencode_global_merges_without_overwriting(
     monkeypatch.setattr(Path, "home", lambda: fake_home)
 
     created = setup_opencode(is_global=True)
-    assert len(created) == 1
+    assert len(created) == 2
 
     data = json.loads(target_file.read_text(encoding="utf-8"))
     assert "custom_coder" in data["agent"]
@@ -256,3 +273,106 @@ def test_setup_opencode_global_merges_without_overwriting(
     assert "git_mcp" in data["mcp"]["servers"]
     assert "hyperflash" in data["mcp"]["servers"]
     assert data["custom_setting"] is True
+
+
+def test_setup_claude_workspace_and_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies setup_claude in both workspace and global modes."""
+    # Workspace mode
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    ws_created = setup_claude(workspace, is_global=False)
+    assert len(ws_created) == 5
+    assert (workspace / "CLAUDE.md").exists()
+    assert (workspace / ".claude" / "commands" / "hyperflash.md").exists()
+    assert (workspace / ".claude" / "agents" / "hyperflash.md").exists()
+    assert (workspace / ".claude.json").exists()
+    assert (workspace / ".mcp.json").exists()
+
+    # Global mode
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    global_created = setup_claude(is_global=True)
+    assert len(global_created) == 4
+    assert (fake_home / ".claude" / "CLAUDE.md").exists()
+    assert (fake_home / ".claude" / "commands" / "hyperflash.md").exists()
+    assert (fake_home / ".claude" / "agents" / "hyperflash.md").exists()
+    assert (fake_home / ".claude.json").exists()
+
+
+def test_setup_windsurf_workspace_and_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies setup_windsurf in both workspace and global modes."""
+    # Workspace mode
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    ws_created = setup_windsurf(workspace, is_global=False)
+    assert len(ws_created) == 3
+    assert (workspace / ".windsurfrules").exists()
+    assert (workspace / ".windsurf" / "rules" / "hyperflash.md").exists()
+    assert (workspace / ".windsurf" / "mcp.json").exists()
+
+    # Global mode
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    global_created = setup_windsurf(is_global=True)
+    assert len(global_created) == 5
+    assert (fake_home / ".codeium" / "windsurf" / "memories" / "global_rules.md").exists()
+    assert (fake_home / ".codeium" / "windsurf" / "mcp_config.json").exists()
+    assert (fake_home / ".windsurf" / "rules" / "hyperflash.md").exists()
+    assert (fake_home / ".windsurf" / "mcp.json").exists()
+    assert (fake_home / ".windsurfrules").exists()
+
+
+def test_setup_cline_workspace_and_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies setup_cline in both workspace and global modes."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    # Workspace mode
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    ws_created = setup_cline(workspace, is_global=False)
+    assert any(".clinerules" in f for f in ws_created)
+    assert (workspace / ".clinerules").exists()
+
+    # Global mode
+    global_created = setup_cline(is_global=True)
+    assert len(global_created) > 0
+    assert (fake_home / ".clinerules").exists()
+    assert (fake_home / ".cline" / "data" / "settings" / "cline_mcp_settings.json").exists()
+
+
+def test_setup_roo_workspace_and_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies setup_roo in both workspace and global modes."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    # Workspace mode
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    ws_created = setup_roo(workspace, is_global=False)
+    assert any(".roorules" in f for f in ws_created)
+    assert (workspace / ".roorules").exists()
+
+    # Global mode
+    global_created = setup_roo(is_global=True)
+    assert len(global_created) > 0
+    assert (fake_home / ".roorules").exists()
+
+
+def test_setup_git_hook_excludes_tests(tmp_path: Path) -> None:
+    """Verifies that setup_git_hook generates pre-commit script excluding tests directory."""
+    git_dir: Path = tmp_path / ".git"
+    git_dir.mkdir()
+    created: list[str] = setup_git_hook(tmp_path)
+    assert len(created) == 1
+    hook_file: Path = Path(created[0])
+    assert hook_file.exists()
+    hook_content: str = hook_file.read_text(encoding="utf-8")
+    assert r"grep -vE '(^|/)tests?/'" in hook_content
+    assert r"grep -vE '(^|/)tests?/'" in GIT_PRE_COMMIT_CONTENT
+
+

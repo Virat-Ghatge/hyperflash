@@ -1,6 +1,6 @@
 """
 Polyglot configuration generators for HyperFlash:
-Enforces first-class native Agent Personas and guardrails for OpenCode, Claude Code, Cursor, Windsurf, Git Hooks, and Antigravity.
+Enforces first-class native Agent Personas and guardrails for OpenCode, Claude Code, Cursor, Windsurf, Git Hooks, Antigravity, Cline, and Roo Code.
 """
 from __future__ import annotations
 
@@ -8,13 +8,14 @@ import json
 import os
 import shutil
 import stat
+import sys
 from pathlib import Path
 from typing import Any
 
 CURSOR_RULES_CONTENT: str = """# HyperFlash Engineering Rules for Cursor
 
 1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Write 100% complete, fully implemented code blocks.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
 4. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task. Do not drift into unrelated modules.
 5. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
@@ -32,7 +33,7 @@ alwaysApply: true
 
 You are HYPERFLASH, the Principal Engineering Reliability Orchestrator.
 1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Write 100% complete, fully implemented code blocks.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
 4. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task.
 5. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
@@ -44,7 +45,7 @@ You are HYPERFLASH, the Principal Engineering Reliability Orchestrator.
 CLAUDE_MD_CONTENT: str = """# HyperFlash Reliability Constitution for Claude Code
 
 1. GROUND FIRST: Never call file editing tools on an existing file without calling View or Cat first in this session.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Every edit must be 100% complete and executable.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. CONTRACT BOUNDARY: Only mutate files explicitly discussed and approved for the current task. Do not touch external modules.
 4. EVIDENCE OVER CLAIMS: Never declare a task complete or a bug fixed unless you have executed the project test command in this session and observed exit code 0.
 5. CHUNKED DECODE: For files exceeding 200 lines, emit class/function skeletons first, then populate method bodies in surgical 100-150 line diffs.
@@ -59,7 +60,7 @@ description: Activate HyperFlash Autonomous Engineering Reliability Agent
 You are now operating as HYPERFLASH, the Principal Engineering Reliability Orchestrator.
 Strictly adhere to the HyperFlash 8 Invariants:
 1. GROUND FIRST: Never call file editing tools without reading the target file completely first.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. CONTRACT BOUNDARY: Only mutate files explicitly discussed and approved for the current task.
 4. EVIDENCE OVER CLAIMS: Never declare a task complete or a bug fixed unless verified with `hyperflash verify` in this session with exit code 0.
 5. CHUNKED DECODE: For files over 200 lines, emit class/function skeletons first, then populate method bodies.
@@ -68,10 +69,34 @@ Strictly adhere to the HyperFlash 8 Invariants:
 8. MCP TOOLS: Use HyperFlash MCP tools (`hyperflash_safe_patch`, `hyperflash_verify`) whenever available.
 """
 
+CLAUDE_AGENT_MD_CONTENT: str = """---
+name: hyperflash
+description: Universal Engineering Reliability & Multi-Agent Verification Runtime
+tools:
+  - hyperflash_safe_patch
+  - hyperflash_verify
+  - hyperflash_get_symbol_graph
+  - hyperflash_init_contract
+model: inherit
+---
+# HyperFlash Engineering Reliability Agent for Claude Code
+
+You are HYPERFLASH, the Principal Engineering Reliability Orchestrator.
+Strictly adhere to the 8 HyperFlash Invariants:
+1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
+2. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task. Do not drift into unrelated modules.
+3. FRESH EVIDENCE REQUIRED: Never declare a task complete or a bug fixed unless you have executed project verification in this session and observed exit code 0.
+4. BYTE-IDENTICAL LOOP REJECTION: Never retry an identical failed modification. Alter implementation strategy if a patch fails.
+5. SATISFY ACCEPTANCE CRITERIA: Verify that all criteria in contract.json are satisfied before completion.
+6. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
+7. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
+8. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
+"""
+
 WINDSURF_RULES_CONTENT: str = """# HyperFlash Engineering Rules for Windsurf
 
 1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Write 100% complete, fully implemented code blocks.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
 4. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task. Do not drift into unrelated modules.
 5. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
@@ -89,7 +114,7 @@ alwaysApply: true
 
 You are HYPERFLASH, the Principal Engineering Reliability Orchestrator.
 1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Write 100% complete, fully implemented code blocks.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
 4. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task.
 5. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
@@ -101,13 +126,40 @@ You are HYPERFLASH, the Principal Engineering Reliability Orchestrator.
 OPENCODE_MD_CONTENT: str = """# HyperFlash Reliability Constitution for OpenCode
 
 1. GROUND BEFORE MUTATING: Always view the target file completely before executing edits.
-2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Every edit must be 100% complete and functional.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
 3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
 4. CONTRACT BOUNDARY: Only mutate files explicitly declared in the task scope.
 5. EVIDENCE OVER CLAIMS: Never declare a task complete or a bug fixed unless verified with `hyperflash verify` in this session.
 6. CHUNKED LONG-DECODE: For files exceeding 200 lines, emit typed class/function skeletons first, then populate method bodies in surgical diffs.
 7. NEVER EXACT-RETRY: Change your implementation strategy if an edit or test fails.
 8. DETERMINISTIC MCP TOOLS: Prefer using HyperFlash MCP tools (`hyperflash_safe_patch`, `hyperflash_verify`, `hyperflash_get_symbol_graph`) to prevent elision and verify changes.
+"""
+
+OPENCODE_AGENT_MD_CONTENT: str = """---
+name: hyperflash
+description: Universal Engineering Reliability & Multi-Agent Verification Runtime
+mode: primary
+model: inherit
+permission:
+  read: allow
+  edit: allow
+  write: allow
+  bash: allow
+  task: allow
+  skill: allow
+---
+# HyperFlash Engineering Reliability Agent for OpenCode
+
+You are HYPERFLASH, the Principal Multi-Agent Engineering Reliability Orchestrator.
+You operate strictly under the 8 HyperFlash Invariants:
+1. GROUND BEFORE MUTATING: Always view the target file completely before executing edits.
+2. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task.
+3. FRESH EVIDENCE REQUIRED: Never declare a task complete or a bug fixed unless verified with hyperflash verify in this session.
+4. NEVER EXACT-RETRY: Change your implementation strategy if an edit or test fails.
+5. SATISFY ACCEPTANCE CRITERIA: Ensure all contract requirements are met.
+6. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
+7. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
+8. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
 """
 
 OPENCODE_AGENT_DICT: dict[str, Any] = {
@@ -118,8 +170,9 @@ OPENCODE_AGENT_DICT: dict[str, Any] = {
         "You operate strictly under the 8 HyperFlash Invariants: 1. Ground before mutating "
         "(read files completely before editing). 2. Stay in declared scope. 3. Fresh evidence "
         "required before completion. 4. Never exact-retry failed modifications. 5. Satisfy "
-        "acceptance criteria. 6. Report reality only. 7. ZERO code elision (never write '// ... "
-        "rest of code' or placeholder comments). 8. Exhaustive static typing on all functions. "
+        "acceptance criteria. 6. Report reality only. 7. ZERO code elision: Never emit lazy comments, "
+        "ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks. "
+        "8. Exhaustive static typing on all functions. "
         "Always use hyperflash_safe_patch to mutate files, and run hyperflash_verify before claiming "
         "a task is done."
     ),
@@ -154,7 +207,9 @@ OPENCODE_GLOBAL_CONFIG_DICT: dict[str, Any] = {
                 "You operate strictly under the 8 HyperFlash Invariants: 1. Ground before mutating. "
                 "2. Stay in declared scope. 3. Fresh evidence required before completion. "
                 "4. Never exact-retry failed modifications. 5. Satisfy acceptance criteria. "
-                "6. Report reality only. 7. ZERO code elision. 8. Exhaustive static typing. "
+                "6. Report reality only. 7. ZERO code elision: Never emit lazy comments, ellipsis "
+                "placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks. "
+                "8. Exhaustive static typing. "
                 "Always use hyperflash_safe_patch to mutate files, and run hyperflash_verify before claiming a task is done."
             ),
         }
@@ -169,20 +224,47 @@ OPENCODE_GLOBAL_CONFIG_DICT: dict[str, Any] = {
     },
 }
 
-GIT_PRE_COMMIT_CONTENT: str = """#!/usr/bin/env bash
+CLINE_RULES_CONTENT: str = """# HyperFlash Engineering Rules for Cline
+
+1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
+3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
+4. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task. Do not drift into unrelated modules.
+5. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
+6. BYTE-IDENTICAL LOOP REJECTION: Never retry an identical failed modification. Alter implementation strategy if a patch fails.
+7. CHUNKED LONG-DECODE: For files over 200 lines, emit typed class/function skeletons first, then populate method bodies in surgical diffs.
+8. MANDATORY VERIFICATION: Always run project verification (`pytest`, `tsc`, `npm test`, or `hyperflash verify`) before concluding tasks.
+"""
+
+ROO_RULES_CONTENT: str = """# HyperFlash Engineering Rules for Roo Code
+
+1. GROUND BEFORE MUTATING: Always view the target file completely before proposing or executing edits.
+2. ZERO CODE ELISION: Never emit lazy comments, ellipsis placeholders, or truncated blocks. Write 100% complete, fully implemented code blocks.
+3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
+4. STAY IN DECLARED SCOPE: Confine all changes strictly to files approved for the current task. Do not drift into unrelated modules.
+5. REPORT REALITY ONLY: Never claim tests passed or bugs are resolved unless verified by running compilation or test commands in this session.
+6. BYTE-IDENTICAL LOOP REJECTION: Never retry an identical failed modification. Alter implementation strategy if a patch fails.
+7. CHUNKED LONG-DECODE: For files over 200 lines, emit typed class/function skeletons first, then populate method bodies in surgical diffs.
+8. MANDATORY VERIFICATION: Always run project verification (`pytest`, `tsc`, `npm test`, or `hyperflash verify`) before concluding tasks.
+"""
+
+GIT_PRE_COMMIT_CONTENT: str = r"""#!/usr/bin/env bash
 # HyperFlash Zero-Elision & Integrity Gate
 set -e
 echo "⚡ Running HyperFlash pre-commit audit..."
 
 # Check for lazy elision patterns in staged changes
-if git diff --cached | grep -E '(//|#|/\\*)[[:space:]]*(\\.\\.\\.|rest of|existing code|TODO: implement)'; then
-    echo "❌ [HYPERFLASH ERROR] Code elision detected in staged changes!"
-    echo "   Never commit '// ... rest of code' or placeholder comments."
-    exit 1
+STAGED_FILES=$(git diff --cached --name-only | grep -E '\.(py|js|ts|tsx|jsx|rs|go|java|cpp|c|cs)$' | grep -vE '(^|/)tests?/' || true)
+if [ -n "$STAGED_FILES" ]; then
+    echo "$STAGED_FILES" | xargs -n1 python -m hyperflash.cli check-elision || {
+        echo "❌ [HYPERFLASH ERROR] Code elision detected in staged changes!"
+        exit 1
+    }
 fi
 
-# Optional verification if hyperflash is in PATH
+# Verification if hyperflash is in PATH
 if command -v hyperflash &> /dev/null; then
+    hyperflash check-elision src/ || exit 1
     hyperflash verify --tier 5 || {
         echo "❌ [HYPERFLASH ERROR] Verification hierarchy failed."
         exit 1
@@ -270,6 +352,52 @@ def merge_json_config(file_path: Path, new_data: dict[str, Any]) -> None:
     file_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
 
+def get_cline_mcp_settings_path() -> Path:
+    """
+    Resolves the platform-specific globalStorage path for Cline (saoudrizwan.claude-dev).
+    """
+    home = Path.home()
+    if sys.platform == "win32" or os.name == "nt":
+        appdata_env = os.environ.get("APPDATA")
+        try:
+            if appdata_env and Path.home() == Path(os.path.expanduser("~")):
+                base = Path(appdata_env)
+            elif appdata_env and Path(appdata_env).is_relative_to(home):
+                base = Path(appdata_env)
+            else:
+                base = home / "AppData" / "Roaming"
+        except (ValueError, Exception):
+            base = home / "AppData" / "Roaming"
+        return base / "Code" / "User" / "globalStorage" / "saoudrizwan.claude-dev" / "settings" / "cline_mcp_settings.json"
+    elif sys.platform == "darwin":
+        return home / "Library" / "Application Support" / "Code" / "User" / "globalStorage" / "saoudrizwan.claude-dev" / "settings" / "cline_mcp_settings.json"
+    else:
+        return home / ".config" / "Code" / "User" / "globalStorage" / "saoudrizwan.claude-dev" / "settings" / "cline_mcp_settings.json"
+
+
+def get_roo_mcp_settings_path() -> Path:
+    """
+    Resolves the platform-specific globalStorage path for Roo Code (rooveterinaryinc.roo-cline).
+    """
+    home = Path.home()
+    if sys.platform == "win32" or os.name == "nt":
+        appdata_env = os.environ.get("APPDATA")
+        try:
+            if appdata_env and Path.home() == Path(os.path.expanduser("~")):
+                base = Path(appdata_env)
+            elif appdata_env and Path(appdata_env).is_relative_to(home):
+                base = Path(appdata_env)
+            else:
+                base = home / "AppData" / "Roaming"
+        except (ValueError, Exception):
+            base = home / "AppData" / "Roaming"
+        return base / "Code" / "User" / "globalStorage" / "rooveterinaryinc.roo-cline" / "settings" / "cline_mcp_settings.json"
+    elif sys.platform == "darwin":
+        return home / "Library" / "Application Support" / "Code" / "User" / "globalStorage" / "rooveterinaryinc.roo-cline" / "settings" / "cline_mcp_settings.json"
+    else:
+        return home / ".config" / "Code" / "User" / "globalStorage" / "rooveterinaryinc.roo-cline" / "settings" / "cline_mcp_settings.json"
+
+
 def setup_cursor(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Configures HyperFlash rules, agent rule mdc, and stdio MCP server for Cursor.
@@ -296,17 +424,30 @@ def setup_cursor(workspace_dir: Path | str = ".", is_global: bool = False) -> li
 
 def setup_claude(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
-    Configures HyperFlash rules, slash command, and stdio MCP server for Claude Code.
+    Configures HyperFlash rules, slash command, agent persona, and stdio MCP server for Claude Code.
     """
     created_files: list[str] = []
 
     if is_global:
         home = Path.home()
-        commands_dir = home / ".claude" / "commands"
+        claude_dir = home / ".claude"
+        claude_dir.mkdir(parents=True, exist_ok=True)
+
+        claude_md = claude_dir / "CLAUDE.md"
+        claude_md.write_text(CLAUDE_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(claude_md))
+
+        commands_dir = claude_dir / "commands"
         commands_dir.mkdir(parents=True, exist_ok=True)
         cmd_file = commands_dir / "hyperflash.md"
         cmd_file.write_text(CLAUDE_COMMAND_MD_CONTENT, encoding="utf-8")
         created_files.append(str(cmd_file))
+
+        agents_dir = claude_dir / "agents"
+        agents_dir.mkdir(parents=True, exist_ok=True)
+        agent_file = agents_dir / "hyperflash.md"
+        agent_file.write_text(CLAUDE_AGENT_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(agent_file))
 
         claude_json = home / ".claude.json"
         merge_json_config(claude_json, MCP_CONFIG_DICT)
@@ -324,9 +465,19 @@ def setup_claude(workspace_dir: Path | str = ".", is_global: bool = False) -> li
         cmd_file.write_text(CLAUDE_COMMAND_MD_CONTENT, encoding="utf-8")
         created_files.append(str(cmd_file))
 
+        agents_dir = workspace / ".claude" / "agents"
+        agents_dir.mkdir(parents=True, exist_ok=True)
+        agent_file = agents_dir / "hyperflash.md"
+        agent_file.write_text(CLAUDE_AGENT_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(agent_file))
+
         claude_json = workspace / ".claude.json"
         merge_json_config(claude_json, MCP_CONFIG_DICT)
         created_files.append(str(claude_json))
+
+        mcp_json = workspace / ".mcp.json"
+        merge_json_config(mcp_json, MCP_CONFIG_DICT)
+        created_files.append(str(mcp_json))
 
     return created_files
 
@@ -335,22 +486,52 @@ def setup_windsurf(workspace_dir: Path | str = ".", is_global: bool = False) -> 
     """
     Configures HyperFlash rules, agent persona rule, and stdio MCP server for Windsurf.
     """
-    target_root = Path.home() if is_global else Path(workspace_dir).resolve()
     created_files: list[str] = []
 
-    rules_path = target_root / ".windsurfrules"
-    rules_path.write_text(WINDSURF_RULES_CONTENT, encoding="utf-8")
-    created_files.append(str(rules_path))
+    if is_global:
+        home = Path.home()
+        # Primary global rules: ~/.codeium/windsurf/memories/global_rules.md
+        primary_rules = home / ".codeium" / "windsurf" / "memories" / "global_rules.md"
+        primary_rules.parent.mkdir(parents=True, exist_ok=True)
+        primary_rules.write_text(WINDSURF_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(primary_rules))
 
-    rules_dir = target_root / ".windsurf" / "rules"
-    rules_dir.mkdir(parents=True, exist_ok=True)
-    rule_md_path = rules_dir / "hyperflash.md"
-    rule_md_path.write_text(WINDSURF_RULE_MD_CONTENT, encoding="utf-8")
-    created_files.append(str(rule_md_path))
+        # Primary global MCP: ~/.codeium/windsurf/mcp_config.json
+        primary_mcp = home / ".codeium" / "windsurf" / "mcp_config.json"
+        merge_json_config(primary_mcp, MCP_CONFIG_DICT)
+        created_files.append(str(primary_mcp))
 
-    mcp_path = target_root / ".windsurf" / "mcp.json"
-    merge_json_config(mcp_path, MCP_CONFIG_DICT)
-    created_files.append(str(mcp_path))
+        # Fallback global rules: ~/.windsurf/rules/hyperflash.md
+        fallback_rules = home / ".windsurf" / "rules" / "hyperflash.md"
+        fallback_rules.parent.mkdir(parents=True, exist_ok=True)
+        fallback_rules.write_text(WINDSURF_RULE_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(fallback_rules))
+
+        # Fallback global MCP: ~/.windsurf/mcp.json
+        fallback_mcp = home / ".windsurf" / "mcp.json"
+        merge_json_config(fallback_mcp, MCP_CONFIG_DICT)
+        created_files.append(str(fallback_mcp))
+
+        # Fallback dotfile: ~/.windsurfrules
+        fallback_dotfile = home / ".windsurfrules"
+        fallback_dotfile.write_text(WINDSURF_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(fallback_dotfile))
+    else:
+        workspace = Path(workspace_dir).resolve()
+
+        rules_path = workspace / ".windsurfrules"
+        rules_path.write_text(WINDSURF_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(rules_path))
+
+        rules_dir = workspace / ".windsurf" / "rules"
+        rules_dir.mkdir(parents=True, exist_ok=True)
+        rule_md_path = rules_dir / "hyperflash.md"
+        rule_md_path.write_text(WINDSURF_RULE_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(rule_md_path))
+
+        mcp_path = workspace / ".windsurf" / "mcp.json"
+        merge_json_config(mcp_path, MCP_CONFIG_DICT)
+        created_files.append(str(mcp_path))
 
     return created_files
 
@@ -423,15 +604,21 @@ def setup_antigravity(workspace_dir: Path | str = ".", is_global: bool = False) 
 def setup_opencode(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Configures HyperFlash rules, agent persona, and stdio MCP server for OpenCode.
-    If is_global is True, writes to user global config: ~/.config/opencode/opencode.json.
-    If not purely global, also writes local workspace files: OPENCODE.md, .opencode/agents/hyperflash.json, opencode.json.
+    If is_global is True, writes to user global config: ~/.config/opencode/opencode.json and ~/.config/opencode/agents/hyperflash.md.
+    If not purely global, writes local workspace files: OPENCODE.md, .opencode/agents/hyperflash.md, .opencode/agents/hyperflash.json, opencode.json.
     """
     created_files: list[str] = []
 
     if is_global:
-        global_config_path = Path.home() / ".config" / "opencode" / "opencode.json"
+        home = Path.home()
+        global_config_path = home / ".config" / "opencode" / "opencode.json"
         merge_json_config(global_config_path, OPENCODE_GLOBAL_CONFIG_DICT)
         created_files.append(str(global_config_path))
+
+        global_agent_md = home / ".config" / "opencode" / "agents" / "hyperflash.md"
+        global_agent_md.parent.mkdir(parents=True, exist_ok=True)
+        global_agent_md.write_text(OPENCODE_AGENT_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(global_agent_md))
     else:
         workspace = Path(workspace_dir).resolve()
 
@@ -441,6 +628,11 @@ def setup_opencode(workspace_dir: Path | str = ".", is_global: bool = False) -> 
 
         agent_dir = workspace / ".opencode" / "agents"
         agent_dir.mkdir(parents=True, exist_ok=True)
+
+        agent_md = agent_dir / "hyperflash.md"
+        agent_md.write_text(OPENCODE_AGENT_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(agent_md))
+
         agent_json_path = agent_dir / "hyperflash.json"
         agent_json_path.write_text(json.dumps(OPENCODE_AGENT_DICT, indent=2), encoding="utf-8")
         created_files.append(str(agent_json_path))
@@ -448,6 +640,54 @@ def setup_opencode(workspace_dir: Path | str = ".", is_global: bool = False) -> 
         opencode_json = workspace / "opencode.json"
         merge_json_config(opencode_json, OPENCODE_CONFIG_DICT)
         created_files.append(str(opencode_json))
+
+    return created_files
+
+
+def setup_cline(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
+    """
+    Configures HyperFlash rules and stdio MCP server for Cline.
+    """
+    created_files: list[str] = []
+    settings_file = get_cline_mcp_settings_path()
+    merge_json_config(settings_file, MCP_CONFIG_DICT)
+    created_files.append(str(settings_file))
+
+    if is_global:
+        cli_settings = Path.home() / ".cline" / "data" / "settings" / "cline_mcp_settings.json"
+        merge_json_config(cli_settings, MCP_CONFIG_DICT)
+        created_files.append(str(cli_settings))
+
+        global_rules = Path.home() / ".clinerules"
+        global_rules.write_text(CLINE_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(global_rules))
+    else:
+        workspace = Path(workspace_dir).resolve()
+        rules_path = workspace / ".clinerules"
+        rules_path.write_text(CLINE_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(rules_path))
+
+    return created_files
+
+
+def setup_roo(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
+    """
+    Configures HyperFlash rules and stdio MCP server for Roo Code.
+    """
+    created_files: list[str] = []
+    settings_file = get_roo_mcp_settings_path()
+    merge_json_config(settings_file, MCP_CONFIG_DICT)
+    created_files.append(str(settings_file))
+
+    if is_global:
+        global_rules = Path.home() / ".roorules"
+        global_rules.write_text(ROO_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(global_rules))
+    else:
+        workspace = Path(workspace_dir).resolve()
+        rules_path = workspace / ".roorules"
+        rules_path.write_text(ROO_RULES_CONTENT, encoding="utf-8")
+        created_files.append(str(rules_path))
 
     return created_files
 
@@ -463,4 +703,6 @@ def setup_all(workspace_dir: Path | str = ".", is_global: bool = False) -> dict[
         "git": setup_git_hooks(workspace_dir, is_global=is_global),
         "antigravity": setup_antigravity(workspace_dir, is_global=is_global),
         "opencode": setup_opencode(workspace_dir, is_global=is_global),
+        "cline": setup_cline(workspace_dir, is_global=is_global),
+        "roo": setup_roo(workspace_dir, is_global=is_global),
     }
