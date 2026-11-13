@@ -18,7 +18,7 @@
 
 <br/>
 
-[![PyPI](https://img.shields.io/pypi/v/hyperflash?style=for-the-badge&logo=pypi&color=3775A9)](https://pypi.org/project/hyperflash/)
+[![PyPI - Version](https://img.shields.io/pypi/v/hyperflash?style=for-the-badge&logo=pypi&logoColor=white&color=3776AB)](https://pypi.org/project/hyperflash/)
 [![Stars](https://img.shields.io/github/stars/Virat-Ghatge/hyperflash?style=for-the-badge&logo=github&color=FFD700)](https://github.com/Virat-Ghatge/hyperflash/stargazers)
 [![Forks](https://img.shields.io/github/forks/Virat-Ghatge/hyperflash?style=for-the-badge&logo=github&color=60A5FA)](https://github.com/Virat-Ghatge/hyperflash/network/members)
 [![Issues](https://img.shields.io/github/issues/Virat-Ghatge/hyperflash?style=for-the-badge&color=34D399)](https://github.com/Virat-Ghatge/hyperflash/issues)
