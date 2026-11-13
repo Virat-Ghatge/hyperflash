@@ -159,7 +159,12 @@ Scaffold your preferred IDE or agent harness in 1 second:
 # Configure Cursor, Claude Code, Windsurf, Git Hooks, Antigravity, and OpenCode in one command
 hyperflash init
 
-# Or target your specific harness:
+# Configure globally across ALL workspaces (user home directory):
+# Sets up OpenCode (~/.config/opencode/opencode.json), Claude Code (~/.claude.json), and Antigravity globally
+hyperflash init --global    # or: hyperflash init -g
+
+# Or target your specific harness globally or locally:
+hyperflash init --target opencode --global
 hyperflash init --target cursor
 hyperflash init --target claude
 hyperflash init --target windsurf
@@ -167,6 +172,14 @@ hyperflash init --target git
 hyperflash init --target antigravity
 hyperflash init --target opencode
 ```
+
+> [!TIP]
+> **Global Configuration Mode (`--global` / `-g`):**
+> When running `hyperflash init --global` (or `-g`), HyperFlash configures your user home directory rather than the current working folder. This means:
+> - **OpenCode:** Registers HyperFlash agent persona and MCP server in `~/.config/opencode/opencode.json` so `opencode --agent hyperflash` works anywhere on your system.
+> - **Claude Code:** Registers the MCP server in `~/.claude.json` and slash command in `~/.claude/commands/hyperflash.md`.
+> - **Antigravity:** Installs skills, agents, and rules globally in `~/.gemini/config/`.
+> You only need to run this once—no per-repository initialization required!
 
 ### 🚀 Universal Agent Launcher
 Launch your preferred coding environment with the native HyperFlash agent persona pre-activated:
@@ -327,9 +340,17 @@ OpenCode supports dedicated named agents natively. HyperFlash installs as a firs
 
 #### Step 1: Automatic Setup via CLI
 ```bash
+# Option A: Global setup (recommended) - works across all folders on your system:
+hyperflash init --target opencode --global
+
+# Option B: Local workspace setup - configures current repository:
 hyperflash init --target opencode
 ```
-This configures:
+
+**Global Setup (`--global`) configures:**
+- `~/.config/opencode/opencode.json`: Declares the global `hyperflash` agent persona and registers the stdio MCP server without overwriting existing agents or servers.
+
+**Local Setup configures:**
 - `OPENCODE.md`: OpenCode engineering constitution.
 - `.opencode/agents/hyperflash.json`: Dedicated agent persona definition.
 - `opencode.json`: Declares `agent: "hyperflash"`, registers agent configuration, and wires the `hyperflash` stdio MCP server.

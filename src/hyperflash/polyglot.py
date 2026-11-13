@@ -144,6 +144,31 @@ OPENCODE_CONFIG_DICT: dict[str, Any] = {
     },
 }
 
+OPENCODE_GLOBAL_CONFIG_DICT: dict[str, Any] = {
+    "agent": {
+        "hyperflash": {
+            "name": "HyperFlash",
+            "description": "Universal Engineering Reliability & Multi-Agent Verification Runtime",
+            "system": (
+                "You are HYPERFLASH, the Principal Multi-Agent Engineering Reliability Orchestrator. "
+                "You operate strictly under the 8 HyperFlash Invariants: 1. Ground before mutating. "
+                "2. Stay in declared scope. 3. Fresh evidence required before completion. "
+                "4. Never exact-retry failed modifications. 5. Satisfy acceptance criteria. "
+                "6. Report reality only. 7. ZERO code elision. 8. Exhaustive static typing. "
+                "Always use hyperflash_safe_patch to mutate files, and run hyperflash_verify before claiming a task is done."
+            ),
+        }
+    },
+    "mcp": {
+        "servers": {
+            "hyperflash": {
+                "type": "local",
+                "command": ["hyperflash", "mcp"],
+            }
+        }
+    },
+}
+
 GIT_PRE_COMMIT_CONTENT: str = """#!/usr/bin/env bash
 # HyperFlash Zero-Elision & Integrity Gate
 set -e
@@ -208,92 +233,138 @@ def merge_json_config(file_path: Path, new_data: dict[str, Any]) -> None:
         else:
             existing["agents"] = new_data["agents"]
 
+    # Merge nested 'agent' dict if both are dicts
+    if "agent" in new_data:
+        if isinstance(new_data["agent"], dict):
+            agent_dict = existing.get("agent", {})
+            if isinstance(agent_dict, dict):
+                agent_dict.update(new_data["agent"])
+                existing["agent"] = agent_dict
+            else:
+                existing["agent"] = new_data["agent"]
+        else:
+            existing["agent"] = new_data["agent"]
+
+    # Merge nested 'mcp' dict (OpenCode global config schema: {"mcp": {"servers": {...}}})
+    if "mcp" in new_data:
+        if isinstance(new_data["mcp"], dict):
+            mcp_dict = existing.get("mcp", {})
+            if isinstance(mcp_dict, dict):
+                servers = mcp_dict.get("servers", {})
+                new_servers = new_data["mcp"].get("servers", {})
+                if isinstance(servers, dict) and isinstance(new_servers, dict):
+                    servers.update(new_servers)
+                    mcp_dict["servers"] = servers
+                else:
+                    mcp_dict.update(new_data["mcp"])
+                existing["mcp"] = mcp_dict
+            else:
+                existing["mcp"] = new_data["mcp"]
+        else:
+            existing["mcp"] = new_data["mcp"]
+
     for k, v in new_data.items():
-        if k not in ("mcpServers", "agents"):
+        if k not in ("mcpServers", "agents", "agent", "mcp"):
             existing[k] = v
 
     file_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
 
 
-def setup_cursor(workspace_dir: Path | str = ".") -> list[str]:
+def setup_cursor(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Configures HyperFlash rules, agent rule mdc, and stdio MCP server for Cursor.
     """
-    workspace = Path(workspace_dir).resolve()
+    target_root = Path.home() if is_global else Path(workspace_dir).resolve()
     created_files: list[str] = []
 
-    rules_path = workspace / ".cursorrules"
+    rules_path = target_root / ".cursorrules"
     rules_path.write_text(CURSOR_RULES_CONTENT, encoding="utf-8")
     created_files.append(str(rules_path))
 
-    rules_dir = workspace / ".cursor" / "rules"
+    rules_dir = target_root / ".cursor" / "rules"
     rules_dir.mkdir(parents=True, exist_ok=True)
     mdc_path = rules_dir / "hyperflash.mdc"
     mdc_path.write_text(CURSOR_RULE_MDC_CONTENT, encoding="utf-8")
     created_files.append(str(mdc_path))
 
-    mcp_path = workspace / ".cursor" / "mcp.json"
+    mcp_path = target_root / ".cursor" / "mcp.json"
     merge_json_config(mcp_path, MCP_CONFIG_DICT)
     created_files.append(str(mcp_path))
 
     return created_files
 
 
-def setup_claude(workspace_dir: Path | str = ".") -> list[str]:
+def setup_claude(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Configures HyperFlash rules, slash command, and stdio MCP server for Claude Code.
     """
-    workspace = Path(workspace_dir).resolve()
     created_files: list[str] = []
 
-    claude_md = workspace / "CLAUDE.md"
-    claude_md.write_text(CLAUDE_MD_CONTENT, encoding="utf-8")
-    created_files.append(str(claude_md))
+    if is_global:
+        home = Path.home()
+        commands_dir = home / ".claude" / "commands"
+        commands_dir.mkdir(parents=True, exist_ok=True)
+        cmd_file = commands_dir / "hyperflash.md"
+        cmd_file.write_text(CLAUDE_COMMAND_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(cmd_file))
 
-    commands_dir = workspace / ".claude" / "commands"
-    commands_dir.mkdir(parents=True, exist_ok=True)
-    cmd_file = commands_dir / "hyperflash.md"
-    cmd_file.write_text(CLAUDE_COMMAND_MD_CONTENT, encoding="utf-8")
-    created_files.append(str(cmd_file))
+        claude_json = home / ".claude.json"
+        merge_json_config(claude_json, MCP_CONFIG_DICT)
+        created_files.append(str(claude_json))
+    else:
+        workspace = Path(workspace_dir).resolve()
 
-    claude_json = workspace / ".claude.json"
-    merge_json_config(claude_json, MCP_CONFIG_DICT)
-    created_files.append(str(claude_json))
+        claude_md = workspace / "CLAUDE.md"
+        claude_md.write_text(CLAUDE_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(claude_md))
+
+        commands_dir = workspace / ".claude" / "commands"
+        commands_dir.mkdir(parents=True, exist_ok=True)
+        cmd_file = commands_dir / "hyperflash.md"
+        cmd_file.write_text(CLAUDE_COMMAND_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(cmd_file))
+
+        claude_json = workspace / ".claude.json"
+        merge_json_config(claude_json, MCP_CONFIG_DICT)
+        created_files.append(str(claude_json))
 
     return created_files
 
 
-def setup_windsurf(workspace_dir: Path | str = ".") -> list[str]:
+def setup_windsurf(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Configures HyperFlash rules, agent persona rule, and stdio MCP server for Windsurf.
     """
-    workspace = Path(workspace_dir).resolve()
+    target_root = Path.home() if is_global else Path(workspace_dir).resolve()
     created_files: list[str] = []
 
-    rules_path = workspace / ".windsurfrules"
+    rules_path = target_root / ".windsurfrules"
     rules_path.write_text(WINDSURF_RULES_CONTENT, encoding="utf-8")
     created_files.append(str(rules_path))
 
-    rules_dir = workspace / ".windsurf" / "rules"
+    rules_dir = target_root / ".windsurf" / "rules"
     rules_dir.mkdir(parents=True, exist_ok=True)
     rule_md_path = rules_dir / "hyperflash.md"
     rule_md_path.write_text(WINDSURF_RULE_MD_CONTENT, encoding="utf-8")
     created_files.append(str(rule_md_path))
 
-    mcp_path = workspace / ".windsurf" / "mcp.json"
+    mcp_path = target_root / ".windsurf" / "mcp.json"
     merge_json_config(mcp_path, MCP_CONFIG_DICT)
     created_files.append(str(mcp_path))
 
     return created_files
 
 
-def setup_git_hooks(workspace_dir: Path | str = ".") -> list[str]:
+def setup_git_hooks(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Installs HyperFlash pre-commit hook into .git/hooks.
     """
     workspace = Path(workspace_dir).resolve()
     git_hooks_dir = workspace / ".git" / "hooks"
     created_files: list[str] = []
+
+    if is_global and not (workspace / ".git").exists():
+        return created_files
 
     git_hooks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -309,7 +380,7 @@ def setup_git_hooks(workspace_dir: Path | str = ".") -> list[str]:
     return created_files
 
 
-def setup_antigravity(workspace_dir: Path | str = ".") -> list[str]:
+def setup_antigravity(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Installs or updates HyperFlash skill and agents in Antigravity (~/.gemini/config/).
     """
@@ -349,39 +420,47 @@ def setup_antigravity(workspace_dir: Path | str = ".") -> list[str]:
     return created_files
 
 
-def setup_opencode(workspace_dir: Path | str = ".") -> list[str]:
+def setup_opencode(workspace_dir: Path | str = ".", is_global: bool = False) -> list[str]:
     """
     Configures HyperFlash rules, agent persona, and stdio MCP server for OpenCode.
+    If is_global is True, writes to user global config: ~/.config/opencode/opencode.json.
+    If not purely global, also writes local workspace files: OPENCODE.md, .opencode/agents/hyperflash.json, opencode.json.
     """
-    workspace = Path(workspace_dir).resolve()
     created_files: list[str] = []
 
-    opencode_md = workspace / "OPENCODE.md"
-    opencode_md.write_text(OPENCODE_MD_CONTENT, encoding="utf-8")
-    created_files.append(str(opencode_md))
+    if is_global:
+        global_config_path = Path.home() / ".config" / "opencode" / "opencode.json"
+        merge_json_config(global_config_path, OPENCODE_GLOBAL_CONFIG_DICT)
+        created_files.append(str(global_config_path))
+    else:
+        workspace = Path(workspace_dir).resolve()
 
-    agent_dir = workspace / ".opencode" / "agents"
-    agent_dir.mkdir(parents=True, exist_ok=True)
-    agent_json_path = agent_dir / "hyperflash.json"
-    agent_json_path.write_text(json.dumps(OPENCODE_AGENT_DICT, indent=2), encoding="utf-8")
-    created_files.append(str(agent_json_path))
+        opencode_md = workspace / "OPENCODE.md"
+        opencode_md.write_text(OPENCODE_MD_CONTENT, encoding="utf-8")
+        created_files.append(str(opencode_md))
 
-    opencode_json = workspace / "opencode.json"
-    merge_json_config(opencode_json, OPENCODE_CONFIG_DICT)
-    created_files.append(str(opencode_json))
+        agent_dir = workspace / ".opencode" / "agents"
+        agent_dir.mkdir(parents=True, exist_ok=True)
+        agent_json_path = agent_dir / "hyperflash.json"
+        agent_json_path.write_text(json.dumps(OPENCODE_AGENT_DICT, indent=2), encoding="utf-8")
+        created_files.append(str(agent_json_path))
+
+        opencode_json = workspace / "opencode.json"
+        merge_json_config(opencode_json, OPENCODE_CONFIG_DICT)
+        created_files.append(str(opencode_json))
 
     return created_files
 
 
-def setup_all(workspace_dir: Path | str = ".") -> dict[str, list[str]]:
+def setup_all(workspace_dir: Path | str = ".", is_global: bool = False) -> dict[str, list[str]]:
     """
     Executes polyglot configuration across all supported platforms.
     """
     return {
-        "cursor": setup_cursor(workspace_dir),
-        "claude": setup_claude(workspace_dir),
-        "windsurf": setup_windsurf(workspace_dir),
-        "git": setup_git_hooks(workspace_dir),
-        "antigravity": setup_antigravity(workspace_dir),
-        "opencode": setup_opencode(workspace_dir),
+        "cursor": setup_cursor(workspace_dir, is_global=is_global),
+        "claude": setup_claude(workspace_dir, is_global=is_global),
+        "windsurf": setup_windsurf(workspace_dir, is_global=is_global),
+        "git": setup_git_hooks(workspace_dir, is_global=is_global),
+        "antigravity": setup_antigravity(workspace_dir, is_global=is_global),
+        "opencode": setup_opencode(workspace_dir, is_global=is_global),
     }

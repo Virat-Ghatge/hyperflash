@@ -30,7 +30,7 @@ def test_cli_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
         parser.parse_args(["--version"])
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "hyperflash 1.1.1" in captured.out
+    assert "hyperflash 1.1.2" in captured.out
 
 
 def test_cli_decide_updates_contract(tmp_path: Path) -> None:
@@ -170,6 +170,59 @@ def test_cli_init_all(tmp_path: Path) -> None:
     assert (tmp_path / "OPENCODE.md").exists()
     assert (tmp_path / ".opencode" / "agents" / "hyperflash.json").exists()
     assert (tmp_path / "opencode.json").exists()
+
+
+def test_cli_init_global_flag_parsing() -> None:
+    """Verifies that -g and --global flags correctly set is_global attribute on parsed args."""
+    parser = build_parser()
+    args_short = parser.parse_args(["init", "-g"])
+    assert args_short.is_global is True
+
+    args_long = parser.parse_args(["init", "--global"])
+    assert args_long.is_global is True
+
+    args_default = parser.parse_args(["init"])
+    assert args_default.is_global is False
+
+
+def test_cli_init_opencode_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that 'hyperflash init --target opencode --global' writes to user global config."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "opencode", "--global"])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    global_config = fake_home / ".config" / "opencode" / "opencode.json"
+    assert global_config.exists()
+    data = json.loads(global_config.read_text(encoding="utf-8"))
+    assert "agent" in data
+    assert "hyperflash" in data["agent"]
+    assert data["agent"]["hyperflash"]["name"] == "HyperFlash"
+    assert "mcp" in data
+    assert "servers" in data["mcp"]
+    assert "hyperflash" in data["mcp"]["servers"]
+
+
+def test_cli_init_all_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that 'hyperflash init --global' configures harnesses in user home."""
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    parser = build_parser()
+    args = parser.parse_args(["init", "--global"])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    assert (fake_home / ".config" / "opencode" / "opencode.json").exists()
+    assert (fake_home / ".claude.json").exists()
+    assert (fake_home / ".claude" / "commands" / "hyperflash.md").exists()
+    assert (fake_home / ".cursorrules").exists()
+    assert (fake_home / ".windsurfrules").exists()
 
 
 def test_cli_launch_missing_harness(capsys: pytest.CaptureFixture[str]) -> None:

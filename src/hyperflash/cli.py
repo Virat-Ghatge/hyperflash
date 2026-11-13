@@ -36,37 +36,39 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Handles 'hyperflash init' command."""
     target: str = args.target.lower()
     workspace: str = args.workspace
+    is_global: bool = getattr(args, "is_global", False)
 
-    print(f"⚡ HyperFlash: Initializing reliability runtime for target '{target}' in '{workspace}'...")
+    target_desc: str = "globally in user home" if is_global else f"in '{workspace}'"
+    print(f"⚡ HyperFlash: Initializing reliability runtime for target '{target}' {target_desc}...")
 
     if target == "all":
-        results = setup_all(workspace)
+        results = setup_all(workspace, is_global=is_global)
         for platform, files in results.items():
             print(f"  • {platform.capitalize()}:")
             for f in files:
                 print(f"    - Configured: {f}")
     elif target == "cursor":
-        files = setup_cursor(workspace)
+        files = setup_cursor(workspace, is_global=is_global)
         for f in files:
             print(f"  • Configured Cursor: {f}")
     elif target == "claude":
-        files = setup_claude(workspace)
+        files = setup_claude(workspace, is_global=is_global)
         for f in files:
             print(f"  • Configured Claude Code: {f}")
     elif target == "windsurf":
-        files = setup_windsurf(workspace)
+        files = setup_windsurf(workspace, is_global=is_global)
         for f in files:
             print(f"  • Configured Windsurf: {f}")
     elif target == "git":
-        files = setup_git_hooks(workspace)
+        files = setup_git_hooks(workspace, is_global=is_global)
         for f in files:
             print(f"  • Configured Git pre-commit hook: {f}")
     elif target == "antigravity":
-        files = setup_antigravity(workspace)
+        files = setup_antigravity(workspace, is_global=is_global)
         for f in files:
             print(f"  • Configured Antigravity: {f}")
     elif target == "opencode":
-        files = setup_opencode(workspace)
+        files = setup_opencode(workspace, is_global=is_global)
         for f in files:
             print(f"  • Configured OpenCode: {f}")
     else:
@@ -243,6 +245,13 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default=".",
         help="Workspace root directory (default: .)",
+    )
+    p_init.add_argument(
+        "-g",
+        "--global",
+        dest="is_global",
+        action="store_true",
+        help="Configure globally in user home directory across all workspaces",
     )
 
     # launch

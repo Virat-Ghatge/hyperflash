@@ -4,6 +4,7 @@ Tests elision detection, symbol graph generation, contract lifecycle, and verifi
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -185,3 +186,73 @@ def test_setup_opencode(tmp_path: Path) -> None:
     assert "mcpServers" in content
     assert "hyperflash" in content
     assert '"agent": "hyperflash"' in content
+
+
+def test_setup_opencode_global(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verifies that setup_opencode(is_global=True) writes to ~/.config/opencode/opencode.json."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    created = setup_opencode(is_global=True)
+    assert len(created) == 1
+
+    expected_path = fake_home / ".config" / "opencode" / "opencode.json"
+    assert str(expected_path) == created[0]
+    assert expected_path.exists()
+
+    data = json.loads(expected_path.read_text(encoding="utf-8"))
+    assert "agent" in data
+    assert "hyperflash" in data["agent"]
+    hf_agent = data["agent"]["hyperflash"]
+    assert hf_agent["name"] == "HyperFlash"
+    assert "Universal Engineering Reliability" in hf_agent["description"]
+    assert "8 HyperFlash Invariants" in hf_agent["system"]
+
+    assert "mcp" in data
+    assert "servers" in data["mcp"]
+    assert "hyperflash" in data["mcp"]["servers"]
+    hf_server = data["mcp"]["servers"]["hyperflash"]
+    assert hf_server["type"] == "local"
+    assert hf_server["command"] == ["hyperflash", "mcp"]
+
+
+def test_setup_opencode_global_merges_without_overwriting(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verifies that global config setup safely merges without deleting existing agents or servers."""
+    fake_home = tmp_path / "home"
+    config_dir = fake_home / ".config" / "opencode"
+    config_dir.mkdir(parents=True)
+    target_file = config_dir / "opencode.json"
+
+    initial_config = {
+        "agent": {
+            "custom_coder": {
+                "name": "Custom Coder",
+                "system": "You write code."
+            }
+        },
+        "mcp": {
+            "servers": {
+                "git_mcp": {
+                    "type": "local",
+                    "command": ["git-mcp"]
+                }
+            }
+        },
+        "custom_setting": True
+    }
+    target_file.write_text(json.dumps(initial_config), encoding="utf-8")
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+
+    created = setup_opencode(is_global=True)
+    assert len(created) == 1
+
+    data = json.loads(target_file.read_text(encoding="utf-8"))
+    assert "custom_coder" in data["agent"]
+    assert "hyperflash" in data["agent"]
+    assert "git_mcp" in data["mcp"]["servers"]
+    assert "hyperflash" in data["mcp"]["servers"]
+    assert data["custom_setting"] is True
