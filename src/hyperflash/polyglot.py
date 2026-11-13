@@ -1,6 +1,6 @@
 """
 Polyglot configuration generators for HyperFlash:
-Enables 1-click instant setup for Cursor, Claude Code, Windsurf, Git Hooks, and Antigravity.
+Enables 1-click instant setup for Cursor, Claude Code, Windsurf, Git Hooks, Antigravity, and OpenCode.
 """
 from __future__ import annotations
 
@@ -45,6 +45,18 @@ WINDSURF_RULES_CONTENT: str = """# HyperFlash Engineering Rules for Windsurf
 6. BYTE-IDENTICAL LOOP REJECTION: Never retry an identical failed modification. Alter implementation strategy if a patch fails.
 7. CHUNKED LONG-DECODE: For files over 200 lines, emit typed class/function skeletons first, then populate method bodies in surgical diffs.
 8. MANDATORY VERIFICATION: Always run project verification (`pytest`, `tsc`, `npm test`, or `hyperflash verify`) before concluding tasks.
+"""
+
+OPENCODE_MD_CONTENT: str = """# HyperFlash Reliability Constitution for OpenCode
+
+1. GROUND BEFORE MUTATING: Always view the target file completely before executing edits.
+2. ZERO CODE ELISION: Never emit `// ... rest of code`, `# ... existing code`, or `TODO: implement`. Every edit must be 100% complete and functional.
+3. EXHAUSTIVE STATIC TYPING: Every function signature, parameter, and return type must carry explicit static type annotations.
+4. CONTRACT BOUNDARY: Only mutate files explicitly declared in the task scope.
+5. EVIDENCE OVER CLAIMS: Never declare a task complete or a bug fixed unless verified with `hyperflash verify` in this session.
+6. CHUNKED LONG-DECODE: For files exceeding 200 lines, emit typed class/function skeletons first, then populate method bodies in surgical diffs.
+7. NEVER EXACT-RETRY: Change your implementation strategy if an edit or test fails.
+8. DETERMINISTIC MCP TOOLS: Prefer using HyperFlash MCP tools (`hyperflash_safe_patch`, `hyperflash_verify`, `hyperflash_get_symbol_graph`) to prevent elision and verify changes.
 """
 
 GIT_PRE_COMMIT_CONTENT: str = """#!/usr/bin/env bash
@@ -227,6 +239,24 @@ def setup_antigravity(workspace_dir: Path | str = ".") -> list[str]:
     return created_files
 
 
+def setup_opencode(workspace_dir: Path | str = ".") -> list[str]:
+    """
+    Configures HyperFlash rules and stdio MCP server for OpenCode.
+    """
+    workspace = Path(workspace_dir).resolve()
+    created_files: list[str] = []
+
+    opencode_md = workspace / "OPENCODE.md"
+    opencode_md.write_text(OPENCODE_MD_CONTENT, encoding="utf-8")
+    created_files.append(str(opencode_md))
+
+    opencode_json = workspace / "opencode.json"
+    merge_json_config(opencode_json, MCP_CONFIG_DICT)
+    created_files.append(str(opencode_json))
+
+    return created_files
+
+
 def setup_all(workspace_dir: Path | str = ".") -> dict[str, list[str]]:
     """
     Executes polyglot configuration across all supported platforms.
@@ -237,4 +267,5 @@ def setup_all(workspace_dir: Path | str = ".") -> dict[str, list[str]]:
         "windsurf": setup_windsurf(workspace_dir),
         "git": setup_git_hooks(workspace_dir),
         "antigravity": setup_antigravity(workspace_dir),
+        "opencode": setup_opencode(workspace_dir),
     }

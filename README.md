@@ -152,7 +152,7 @@ pip install hyperflash
 Scaffold your preferred IDE or agent harness in 1 second:
 
 ```bash
-# Configure Cursor, Claude Code, Windsurf, Git Hooks, and Antigravity in one command
+# Configure Cursor, Claude Code, Windsurf, Git Hooks, Antigravity, and OpenCode in one command
 hyperflash init
 
 # Or target your specific harness:
@@ -161,6 +161,7 @@ hyperflash init --target claude
 hyperflash init --target windsurf
 hyperflash init --target git
 hyperflash init --target antigravity
+hyperflash init --target opencode
 ```
 
 ### 🔌 Universal MCP Server Integration
@@ -191,6 +192,18 @@ HyperFlash features a built-in Model Context Protocol (MCP) server running over 
 ```
 
 #### In Windsurf (`.windsurf/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "hyperflash": {
+      "command": "hyperflash",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### In OpenCode (`opencode.json`):
 ```json
 {
   "mcpServers": {
@@ -282,7 +295,12 @@ python -m src.skills.hyperflash.scripts.verify_hierarchy --tier 6
 
 ### 3. OpenCode / OpenHands / SWE-Agent
 
-HyperFlash scripts can be invoked directly inside any autonomous agent container or Python environment:
+Scaffold full HyperFlash rules and MCP integration with one command:
+```bash
+hyperflash init --target opencode # Configures OPENCODE.md & opencode.json
+```
+
+HyperFlash scripts can also be invoked directly inside any autonomous agent container or Python environment:
 
 ```python
 # In your custom agent loop or OpenHands execution environment

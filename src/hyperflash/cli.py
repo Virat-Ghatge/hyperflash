@@ -24,6 +24,7 @@ from hyperflash.polyglot import (
     setup_claude,
     setup_cursor,
     setup_git_hooks,
+    setup_opencode,
     setup_windsurf,
 )
 
@@ -61,8 +62,12 @@ def cmd_init(args: argparse.Namespace) -> int:
         files = setup_antigravity(workspace)
         for f in files:
             print(f"  • Configured Antigravity: {f}")
+    elif target == "opencode":
+        files = setup_opencode(workspace)
+        for f in files:
+            print(f"  • Configured OpenCode: {f}")
     else:
-        print(f"❌ Unknown target '{target}'. Choose from all, cursor, claude, windsurf, git, antigravity.")
+        print(f"❌ Unknown target '{target}'. Choose from all, cursor, claude, windsurf, git, antigravity, opencode.")
         return 1
 
     print("✅ HyperFlash initialization complete. Guardrails are active.")
@@ -180,10 +185,10 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
     # init
-    p_init = subparsers.add_parser("init", help="1-Click setup for Cursor, Claude Code, Windsurf, Git hooks, Antigravity")
+    p_init = subparsers.add_parser("init", help="1-Click setup for Cursor, Claude Code, Windsurf, Git hooks, Antigravity, OpenCode")
     p_init.add_argument(
         "--target",
-        choices=["all", "cursor", "claude", "windsurf", "git", "antigravity"],
+        choices=["all", "cursor", "claude", "windsurf", "git", "antigravity", "opencode"],
         default="all",
         help="Target platform to configure (default: all)",
     )

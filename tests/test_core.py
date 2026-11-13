@@ -18,6 +18,7 @@ from hyperflash.core import (
     run_verification,
     save_contract,
 )
+from hyperflash.polyglot import setup_opencode
 
 
 def test_check_for_elision_detects_prohibited_patterns() -> None:
@@ -163,3 +164,19 @@ def test_run_verification_on_clean_workspace(tmp_path: Path) -> None:
     res_fail = run_verification(tier=1, workspace_dir=tmp_path)
     assert res_fail["passed"] is False
     assert "VERDICT: FAIL" in res_fail["verdict"]
+
+
+def test_setup_opencode(tmp_path: Path) -> None:
+    """Verifies that setup_opencode creates OPENCODE.md and opencode.json directly."""
+    created = setup_opencode(tmp_path)
+    assert len(created) == 2
+
+    opencode_md = tmp_path / "OPENCODE.md"
+    assert opencode_md.exists()
+    assert "HyperFlash Reliability Constitution for OpenCode" in opencode_md.read_text(encoding="utf-8")
+
+    opencode_json = tmp_path / "opencode.json"
+    assert opencode_json.exists()
+    content = opencode_json.read_text(encoding="utf-8")
+    assert "mcpServers" in content
+    assert "hyperflash" in content

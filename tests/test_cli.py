@@ -72,6 +72,23 @@ def test_cli_init_cursor(tmp_path: Path) -> None:
     assert "hyperflash" in mcp_json["mcpServers"]
 
 
+def test_cmd_init_opencode(tmp_path: Path) -> None:
+    """Verifies that 'hyperflash init --target opencode' scaffolds OPENCODE.md and opencode.json."""
+    parser = build_parser()
+    args = parser.parse_args(["init", "--target", "opencode", "--workspace", str(tmp_path)])
+    exit_code = cmd_init(args)
+    assert exit_code == 0
+
+    opencode_md = tmp_path / "OPENCODE.md"
+    assert opencode_md.exists()
+    assert "HyperFlash Reliability Constitution for OpenCode" in opencode_md.read_text(encoding="utf-8")
+
+    opencode_json = tmp_path / "opencode.json"
+    assert opencode_json.exists()
+    config_data = json.loads(opencode_json.read_text(encoding="utf-8"))
+    assert "hyperflash" in config_data["mcpServers"]
+
+
 def test_cli_init_all(tmp_path: Path) -> None:
     """Verifies that 'hyperflash init --target all' scaffolds files for all harnesses."""
     parser = build_parser()
@@ -83,6 +100,8 @@ def test_cli_init_all(tmp_path: Path) -> None:
     assert (tmp_path / "CLAUDE.md").exists()
     assert (tmp_path / ".windsurfrules").exists()
     assert (tmp_path / ".git" / "hooks" / "pre-commit").exists()
+    assert (tmp_path / "OPENCODE.md").exists()
+    assert (tmp_path / "opencode.json").exists()
 
 
 def test_cli_check_elision_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
