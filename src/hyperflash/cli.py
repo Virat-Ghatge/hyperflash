@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -177,7 +178,7 @@ def cmd_launch(args: argparse.Namespace) -> int:
     extra_args: list[str] = list(getattr(args, "extra_args", []) or [])
 
     cmd_map: dict[str, list[str]] = {
-        "opencode": ["opencode", "--agent", "hyperflash"],
+        "opencode": ["opencode"],
         "antigravity": ["agy", "--agent", "hyperflash"],
         "agy": ["agy", "--agent", "hyperflash"],
         "claude": ["claude"],
@@ -190,14 +191,21 @@ def cmd_launch(args: argparse.Namespace) -> int:
         print(f"❌ Unknown harness '{harness}'. Choose from opencode, claude, cursor, windsurf, antigravity, agy.")
         return 1
 
-    binary_name = base_cmd[0]
-    if not shutil.which(binary_name):
+    binary_name: str = base_cmd[0]
+    resolved: str | None = shutil.which(binary_name)
+    if not resolved and os.name == "nt":
+        for ext in [".cmd", ".exe", ".bat", ".ps1"]:
+            resolved = shutil.which(f"{binary_name}{ext}")
+            if resolved:
+                break
+
+    if not resolved:
         print(f"❌ Harness '{harness}' not found in PATH. Please install it first.")
         return 1
 
-    full_cmd: list[str] = base_cmd + extra_args
+    full_cmd: list[str] = [resolved or binary_name] + base_cmd[1:] + extra_args
     try:
-        proc = subprocess.run(full_cmd)
+        proc = subprocess.run(full_cmd, shell=(os.name == "nt"))
         return proc.returncode
     except FileNotFoundError:
         print(f"❌ Harness '{harness}' not found in PATH. Please install it first.")

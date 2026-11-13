@@ -5,6 +5,7 @@ Verifies subcommands: init, launch, verify, decide, status, check-elision, and -
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -29,7 +30,7 @@ def test_cli_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
         parser.parse_args(["--version"])
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "hyperflash 1.1.0" in captured.out
+    assert "hyperflash 1.1.1" in captured.out
 
 
 def test_cli_decide_updates_contract(tmp_path: Path) -> None:
@@ -189,7 +190,7 @@ def test_cli_launch_success_forwarding() -> None:
     parser = build_parser()
 
     cases: list[tuple[list[str], list[str]]] = [
-        (["launch", "opencode", "--prompt", "fix it"], ["opencode", "--agent", "hyperflash", "--prompt", "fix it"]),
+        (["launch", "opencode", "--prompt", "fix it"], ["opencode", "--prompt", "fix it"]),
         (["launch", "antigravity", "--model", "gemini"], ["agy", "--agent", "hyperflash", "--model", "gemini"]),
         (["launch", "agy", "-i", "hello"], ["agy", "--agent", "hyperflash", "-i", "hello"]),
         (["launch", "claude"], ["claude"]),
@@ -199,14 +200,38 @@ def test_cli_launch_success_forwarding() -> None:
 
     for argv, expected_cmd in cases:
         args = parser.parse_args(argv)
-        with patch("shutil.which", return_value="/bin/mock-binary"), patch("subprocess.run") as mock_run:
+        with patch("shutil.which", side_effect=lambda x: x), patch("subprocess.run") as mock_run:
             mock_proc = MagicMock()
             mock_proc.returncode = 0
             mock_run.return_value = mock_proc
 
             code = cmd_launch(args)
             assert code == 0
-            mock_run.assert_called_once_with(expected_cmd)
+            mock_run.assert_called_once_with(expected_cmd, shell=(os.name == "nt"))
+
+
+def test_cli_launch_windows_cmd_resolution() -> None:
+    """Verifies that cmd_launch on Windows resolves .cmd shims when bare binary is missing."""
+    parser = build_parser()
+    args = parser.parse_args(["launch", "opencode", "--prompt", "check"])
+
+    def mock_which(cmd: str) -> str | None:
+        if cmd == "opencode.cmd":
+            return r"C:\npm\opencode.cmd"
+        return None
+
+    with (
+        patch("hyperflash.cli.os.name", "nt"),
+        patch("shutil.which", side_effect=mock_which),
+        patch("subprocess.run") as mock_run,
+    ):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_run.return_value = mock_proc
+
+        code = cmd_launch(args)
+        assert code == 0
+        mock_run.assert_called_once_with([r"C:\npm\opencode.cmd", "--prompt", "check"], shell=True)
 
 
 def test_cli_check_elision_command(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

@@ -402,7 +402,7 @@ hyperflash init --target git
 ```yaml
 repos:
   - repo: https://github.com/Virat-Ghatge/hyperflash
-    rev: v1.1.0
+    rev: v1.1.1
     hooks:
       - id: hyperflash-zero-elision
       - id: hyperflash-verify
